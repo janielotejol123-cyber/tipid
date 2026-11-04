@@ -7,6 +7,11 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.4.1 — 2026-11-04 · Updates & iPhone fix
+- Settings → About → "Check for updates" (clears offline cache and reloads the newest version)
+- "New version available → Reload" now also clears the offline cache
+- Fixed empty strip under the bottom menu in the iPhone home-screen app (shell pinned to screen edges)
+
 ## 1.4.0 — 2026-11-04 · Flexible income
 - Income can be Fixed (salary) or Varies (business, projects); record money as it comes in, Tipid uses the last-3-month average
 - App version in Settings and login screen, "What's new", and a notice when a new version is deployed

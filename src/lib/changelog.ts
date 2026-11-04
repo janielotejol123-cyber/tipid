@@ -1,6 +1,13 @@
 /** Newest first. Keep in sync with CHANGELOG.md and the "version" in package.json. */
 export const CHANGELOG: { version: string; date: string; title: string; items: string[] }[] = [
   {
+    version: '1.4.1', date: '2026-11-04', title: 'Updates & iPhone fix',
+    items: [
+      'Settings → About → "Check for updates" always loads the newest version.',
+      'Fixed an empty strip under the bottom menu on iPhone home-screen app.',
+    ],
+  },
+  {
     version: '1.4.0', date: '2026-11-04', title: 'Flexible income',
     items: [
       'Income can be Fixed (salary) or Varies (business, projects).',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CHANGELOG } from '../lib/changelog'
-import { buildLabel, useNewVersion, versionLabel } from '../lib/version'
+import { APP_COMMIT, APP_VERSION, buildLabel, fetchDeployed, hardUpdate, useNewVersion, versionLabel } from '../lib/version'
 import Glyph from './Glyph'
 import { Sheet } from './ui'
 
@@ -14,7 +14,7 @@ export function UpdateNotice() {
       style={{ top: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
       <span className="size-9 rounded-full bg-lime/10 text-lime flex items-center justify-center"><Glyph name="sparkles" size={18} /></span>
       <p className="flex-1 text-sm"><b>New version {latest !== __APP_VERSION__ ? `v${latest} ` : ''}available</b><br /><span className="text-muted">Reload to get the latest Tipid.</span></p>
-      <button className="btn-primary btn-sm" onClick={() => location.reload()}>Reload</button>
+      <button className="btn-primary btn-sm" onClick={hardUpdate}>Reload</button>
       <button className="text-muted text-xs px-1" onClick={() => setHidden(true)}>Later</button>
     </div>
   )
@@ -34,8 +34,29 @@ export function AboutSection() {
         </span>
         <span className="text-sm text-lime font-semibold">What's new</span>
       </button>
+      <CheckForUpdates />
       {open && <WhatsNew onClose={() => setOpen(false)} />}
     </section>
+  )
+}
+
+function CheckForUpdates() {
+  const [state, setState] = useState<'idle' | 'checking' | 'latest' | 'offline'>('idle')
+  async function check() {
+    setState('checking')
+    const v = await fetchDeployed()
+    if (!v) return setState('offline')
+    if (v.commit !== APP_COMMIT || v.version !== APP_VERSION) return hardUpdate()
+    setState('latest')
+  }
+  return (
+    <div className="mt-2 flex items-center gap-3">
+      <button className="btn-ghost btn-sm" disabled={state === 'checking'} onClick={check}>
+        <Glyph name="download" size={16} />{state === 'checking' ? 'Checking…' : 'Check for updates'}
+      </button>
+      {state === 'latest' && <span className="text-sm text-lime flex items-center gap-1.5"><Glyph name="check" size={16} />You have the latest version</span>}
+      {state === 'offline' && <span className="text-sm text-warn">No internet — try again later</span>}
+    </div>
   )
 }
 

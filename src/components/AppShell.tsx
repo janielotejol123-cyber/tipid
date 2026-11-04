@@ -27,7 +27,7 @@ export default function AppShell() {
   useEffect(() => { scroller.current?.scrollTo(0, 0); window.scrollTo(0, 0) }, [pathname])
 
   return (
-    <div className="h-full flex flex-col md:h-auto md:min-h-full md:flex-row">
+    <div className="app-shell flex flex-col md:min-h-full md:flex-row">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-r border-line p-5 sticky top-0 h-screen">
         <Logo className="px-3 mb-1" />

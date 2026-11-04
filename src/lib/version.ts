@@ -10,6 +10,24 @@ export const buildLabel = `${versionLabel} · build ${APP_COMMIT} · ${new Date(
  * Checks /version.json (written at build time) when the app opens or comes back to the foreground,
  * and every 30 minutes. Returns the newer version string when one has been deployed.
  */
+/** Fetch the deployed version. null when offline. */
+export async function fetchDeployed(): Promise<{ version: string; commit: string } | null> {
+  try {
+    const r = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+    return r.ok ? await r.json() : null
+  } catch { return null }
+}
+
+/** Force the newest version: drop cached files and the service worker, then reload from the server. */
+export async function hardUpdate() {
+  try {
+    if ('caches' in window) for (const k of await caches.keys()) await caches.delete(k)
+    if ('serviceWorker' in navigator) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister()
+  } finally {
+    location.replace(`/?v=${Date.now()}`)
+  }
+}
+
 export function useNewVersion() {
   const [latest, setLatest] = useState<string | null>(null)
   useEffect(() => {
