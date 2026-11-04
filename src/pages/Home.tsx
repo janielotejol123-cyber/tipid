@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import TxDetail from '../components/TxDetail'
 import TxRow from '../components/TxRow'
+import Glyph from '../components/Glyph'
 import { InstallBanner } from '../components/InstallApp'
 import { IconChart, IconChevron, IconPiggy, IconReceipt, IconSettings } from '../components/icons'
 import { Avatar, Empty, Logo, Progress, StatusPill } from '../components/ui'
@@ -82,7 +83,7 @@ export default function Home() {
               <Link to="/reports" className="text-sm text-lime font-semibold">See all</Link>
             </div>
             {recent.length === 0
-              ? <Empty icon="🧾" title="No transactions yet">Tap <b className="text-lime">+</b> to add your first expense.</Empty>
+              ? <Empty icon="receipt" title="No transactions yet">Tap <b className="text-lime">+</b> to add your first expense.</Empty>
               : <div className="divide-y divide-line">{recent.map((t) => <TxRow key={t.id} tx={t} data={data} onClick={() => setOpen(t)} />)}</div>}
           </section>
         </div>
@@ -113,12 +114,12 @@ export default function Home() {
               <Link to="/bills" className="text-sm text-lime font-semibold">All bills</Link>
             </div>
             {m.unpaidBills.length === 0
-              ? <p className="text-sm text-muted py-2">All bills paid this month. 🎉</p>
+              ? <p className="text-sm text-muted py-2 flex items-center gap-2"><Glyph name="check" size={18} className="text-lime" />All bills paid this month.</p>
               : m.unpaidBills.slice(0, 4).map((b) => {
                 const late = b.due_day && b.due_day < day
                 return (
                   <div key={b.id} className="flex items-center gap-3 py-2.5">
-                    <span className="text-xl">{b.icon}</span>
+                    <span className="size-9 rounded-full bg-surface-2 text-lime flex items-center justify-center shrink-0"><Glyph name={b.icon} size={18} /></span>
                     <span className="flex-1 min-w-0">
                       <span className="block font-semibold truncate">{b.name}</span>
                       <span className={`block text-xs ${late ? 'text-danger' : 'text-muted'}`}>

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useData } from '../lib/household'
 import { supabase } from '../lib/supabase'
 import type { Category, CategoryType } from '../lib/types'
+import Glyph, { CATEGORY_ICONS, glyphKey } from './Glyph'
 import MoneyInput, { n } from './MoneyInput'
 import { ErrorText, Sheet } from './ui'
 
-const ICONS = ['🏠', '💧', '⚡', '📶', '🛒', '🍔', '🚌', '📱', '🛍️', '🎒', '🏥', '🔧', '💊', '🐶', '🎮', '⛽', '👶', '🎁', '📺', '💳', '💸']
 
 /** Add or edit a category / bill. `category` null = new. */
 export default function CategoryForm({ open, onClose, category, type }: {
@@ -13,7 +13,7 @@ export default function CategoryForm({ open, onClose, category, type }: {
 }) {
   const { data, reload } = useData()
   const [name, setName] = useState(category?.name ?? '')
-  const [icon, setIcon] = useState(category?.icon ?? (type === 'fixed' ? '🏠' : type === 'emergency' ? '🏥' : '💸'))
+  const [icon, setIcon] = useState(category ? glyphKey(category.icon) : type === 'fixed' ? 'home' : type === 'emergency' ? 'medical' : 'wallet')
   const [budget, setBudget] = useState<number | ''>(category?.monthly_budget ?? '')
   const [due, setDue] = useState<number | ''>(category?.due_day ?? '')
   const [busy, setBusy] = useState(false)
@@ -41,8 +41,9 @@ export default function CategoryForm({ open, onClose, category, type }: {
     <Sheet open={open} onClose={onClose} title={category ? `Edit ${word}` : `New ${word}`}>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
-          {ICONS.map((i) => (
-            <button key={i} onClick={() => setIcon(i)} className={`size-10 rounded-xl text-xl ${icon === i ? 'bg-lime/20 ring-2 ring-lime' : 'bg-surface-2'}`}>{i}</button>
+          {CATEGORY_ICONS.map((i) => (
+            <button key={i} onClick={() => setIcon(i)} aria-label={i}
+              className={`size-10 rounded-xl flex items-center justify-center ${icon === i ? 'bg-lime/20 ring-2 ring-lime text-lime' : 'bg-surface-2 text-muted'}`}><Glyph name={i} /></button>
           ))}
         </div>
         <div><label className="label">Name</label><input className="field" value={name} onChange={(e) => setName(e.target.value)} /></div>

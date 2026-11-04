@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import CategoryForm from '../components/CategoryForm'
+import Glyph from '../components/Glyph'
 import { InstallRow } from '../components/InstallApp'
 import MoneyInput, { n } from '../components/MoneyInput'
 import { IconChevron, IconLogout, IconPlus } from '../components/icons'
@@ -35,7 +36,7 @@ export default function Settings() {
         <div className="card !p-2">
           {cats.map((c) => (
             <button key={c.id} disabled={!canManage} onClick={() => setCat({ c, type })} className="w-full flex items-center gap-3 p-3 text-left">
-              <span className="text-xl">{c.icon}</span><span className="flex-1 font-medium">{c.name}</span>
+              <Glyph name={c.icon} className="text-lime" /><span className="flex-1 font-medium">{c.name}</span>
               <span className="font-semibold">{c.monthly_budget ? peso(c.monthly_budget) : <span className="text-muted">—</span>}</span>
             </button>
           ))}
@@ -66,7 +67,7 @@ export default function Settings() {
         <div className="card !p-2">
           {data.incomes.map((i) => (
             <button key={i.id} disabled={!canManage} onClick={() => setIncome(i)} className="w-full flex items-center gap-3 p-3 text-left">
-              <span className="text-xl">💰</span>
+              <Glyph name="coins" className="text-lime" />
               <span className="flex-1 min-w-0">
                 <span className="block font-medium truncate">{i.source} · {data.members.find((m) => m.id === i.member_id)?.name ?? '—'}</span>
                 <span className="block text-xs text-muted">{peso(i.amount)} · {payLabel[i.frequency]}</span>
@@ -79,7 +80,7 @@ export default function Settings() {
       </section>
 
       <Link to="/bills" className="card flex items-center justify-between mb-6">
-        <span><span className="block font-semibold">🧾 Fixed bills</span><span className="text-sm text-muted">{peso(plan.fixed)} per month</span></span>
+        <span><span className="flex items-center gap-2 font-semibold"><Glyph name="receipt" size={18} className="text-lime" />Fixed bills</span><span className="text-sm text-muted">{peso(plan.fixed)} per month</span></span>
         <IconChevron className="text-muted" />
       </Link>
 

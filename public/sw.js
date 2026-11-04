@@ -2,7 +2,7 @@
 // Pages: network first (always newest version), falling back to cache when offline.
 // Built assets (/assets/*, icons): cache first (file names change on every build).
 // Supabase/API calls are never cached.
-const CACHE = 'tipid-v1'
+const CACHE = 'tipid-v2'
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png']
 
 self.addEventListener('install', (e) => {

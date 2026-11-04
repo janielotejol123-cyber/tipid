@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useInstall } from '../lib/install'
+import Glyph from './Glyph'
 import { IconClose } from './icons'
 import { Sheet } from './ui'
 
@@ -33,10 +34,10 @@ export function InstallBanner() {
 export function InstallRow() {
   const { mode, install } = useInstall()
   const [help, setHelp] = useState(false)
-  if (mode === 'installed') return <p className="text-sm text-lime">✅ Tipid is installed on this device.</p>
+  if (mode === 'installed') return <p className="text-sm text-lime flex items-center gap-2"><Glyph name="check" size={18} />Tipid is installed on this device.</p>
   return (
     <>
-      <button className="btn-ghost w-full" onClick={() => (mode === 'prompt' ? install() : setHelp(true))}>📲 Install Tipid on this device</button>
+      <button className="btn-ghost w-full" onClick={() => (mode === 'prompt' ? install() : setHelp(true))}><Glyph name="download" size={18} />Install Tipid on this device</button>
       {help && <InstallHelp onClose={() => setHelp(false)} />}
     </>
   )
@@ -47,7 +48,7 @@ function InstallHelp({ onClose }: { onClose: () => void }) {
   const steps = mode === 'ios'
     ? [
         <>Open Tipid in <b className="text-ink">Safari</b> (other browsers on iPhone can't install apps).</>,
-        <>Tap the <b className="text-ink">Share</b> button <span className="inline-block px-1.5 rounded bg-surface-2">⬆︎</span> at the bottom of the screen.</>,
+        <>Tap the <b className="text-ink">Share</b> button <span className="inline-flex align-middle p-1 rounded bg-surface-2 text-ink"><Glyph name="share" size={14} /></span> at the bottom of the screen.</>,
         <>Scroll down and tap <b className="text-ink">Add to Home Screen</b>.</>,
         <>Tap <b className="text-ink">Add</b>. Tipid now opens from your home screen.</>,
       ]

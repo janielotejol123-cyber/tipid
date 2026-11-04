@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import TxDetail from '../components/TxDetail'
 import TxRow from '../components/TxRow'
+import Glyph from '../components/Glyph'
 import { IconBack, IconChevron } from '../components/icons'
 import { Empty, PageHeader, Progress, StatusPill } from '../components/ui'
 import { monthSummary, statusFor } from '../lib/budget'
@@ -75,7 +76,7 @@ export default function Reports() {
 
         <section className="card">
           <h2 className="font-bold mb-3">Where the money went</h2>
-          {pie.length === 0 ? <Empty icon="📊" title="No expenses this month" /> : (
+          {pie.length === 0 ? <Empty icon="chart" title="No expenses this month" /> : (
             <div className="flex items-center gap-4">
               <div className="size-36 shrink-0">
                 <ResponsiveContainer>
@@ -125,7 +126,7 @@ export default function Reports() {
                 return (
                   <li key={c?.id ?? 'none'}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>{c?.icon ?? '💸'} {c?.name ?? 'Uncategorized'}</span>
+                      <span className="flex items-center gap-2"><Glyph name={c?.icon} size={16} className="text-muted" />{c?.name ?? 'Uncategorized'}</span>
                       <span className={`font-semibold ${over ? 'text-danger' : ''}`}>{peso(Math.round(amount))}{budget > 0 && <span className="text-muted font-normal"> / {peso(budget)}</span>}</span>
                     </div>
                     <Progress value={budget > 0 ? amount / budget : amount / Math.max(1, m.spent)} tone={over ? 'bg-danger' : 'bg-lime'} />
@@ -155,7 +156,7 @@ export default function Reports() {
               <ul className="space-y-3">
                 {[plan.emergency, ...plan.goals].filter(Boolean).map((p) => (
                   <li key={p!.goal.id}>
-                    <div className="flex justify-between text-sm mb-1"><span>{p!.goal.emoji} {p!.goal.name}</span><span className="font-semibold">{Math.round(p!.progress * 100)}%</span></div>
+                    <div className="flex justify-between text-sm mb-1"><span className="flex items-center gap-2"><Glyph name={p!.goal.emoji} size={16} fallback="target" className="text-muted" />{p!.goal.name}</span><span className="font-semibold">{Math.round(p!.progress * 100)}%</span></div>
                     <Progress value={p!.progress} />
                   </li>
                 ))}
@@ -166,7 +167,7 @@ export default function Reports() {
 
         <section className="card md:col-span-2">
           <h2 className="font-bold mb-1">All transactions</h2>
-          {txs.length === 0 ? <Empty icon="🧾" title="Nothing recorded" /> : (
+          {txs.length === 0 ? <Empty icon="receipt" title="Nothing recorded" /> : (
             <div className="divide-y divide-line">{txs.map((t) => <TxRow key={t.id} tx={t} data={data} onClick={() => setOpen(t)} />)}</div>
           )}
         </section>

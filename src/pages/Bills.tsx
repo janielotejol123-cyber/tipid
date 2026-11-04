@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CategoryForm from '../components/CategoryForm'
+import Glyph from '../components/Glyph'
 import MoneyInput, { n } from '../components/MoneyInput'
 import { IconCheck, IconPlus } from '../components/icons'
 import { Empty, ErrorText, PageHeader, Progress, Sheet } from '../components/ui'
@@ -45,14 +46,14 @@ export default function Bills() {
       </section>
 
       <section className="card !p-2">
-        {bills.length === 0 && <Empty icon="🧾" title="No fixed bills yet">Add rent, water, electricity and other monthly bills.</Empty>}
+        {bills.length === 0 && <Empty icon="receipt" title="No fixed bills yet">Add rent, water, electricity and other monthly bills.</Empty>}
         {bills.map((b) => {
           const paid = payments.has(b.id)
           const late = !paid && b.due_day !== null && b.due_day < today.getDate()
           return (
             <div key={b.id} className="flex items-center gap-3 p-3">
-              <button className="size-12 rounded-full bg-surface-2 text-2xl flex items-center justify-center shrink-0"
-                onClick={() => canManage && setEditing(b)}>{b.icon}</button>
+              <button className="size-12 rounded-full bg-surface-2 text-lime flex items-center justify-center shrink-0"
+                onClick={() => canManage && setEditing(b)}><Glyph name={b.icon} size={22} /></button>
               <div className="flex-1 min-w-0" onClick={() => canManage && setEditing(b)}>
                 <p className="font-semibold truncate">{b.name}</p>
                 <p className={`text-sm ${late ? 'text-danger' : 'text-muted'}`}>

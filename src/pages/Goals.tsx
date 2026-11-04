@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import Glyph, { GOAL_ICONS, GlyphBadge, glyphKey } from '../components/Glyph'
 import MoneyInput, { n } from '../components/MoneyInput'
 import { IconPlus } from '../components/icons'
 import { Empty, ErrorText, PageHeader, Progress, Sheet } from '../components/ui'
@@ -43,7 +44,7 @@ export default function Goals() {
         {plan.goals.map((p) => <GoalCard key={p.goal.id} p={p} onEdit={() => canManage && setEditing(p.goal)} />)}
       </div>
       {!plan.emergency && plan.goals.length === 0 && (
-        <div className="card"><Empty icon="🎯" title="No goals yet">Saving for a phone, trip or tuition? Add it and Tipid will make a plan.</Empty></div>
+        <div className="card"><Empty icon="target" title="No goals yet">Saving for a phone, trip or tuition? Add it and Tipid will make a plan.</Empty></div>
       )}
 
       {editing && <GoalForm goal={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
@@ -58,7 +59,7 @@ function GoalCard({ p, onEdit }: { p: GoalPlan; onEdit: () => void }) {
   return (
     <section className="card flex flex-col">
       <button onClick={onEdit} className="flex items-center gap-3 text-left">
-        <span className="size-12 rounded-full bg-surface-2 text-2xl flex items-center justify-center shrink-0">{goal.emoji}</span>
+        <GlyphBadge name={goal.emoji} size={48} fallback="target" />
         <span className="flex-1 min-w-0">
           <span className="block font-bold truncate">{goal.name}</span>
           <span className="block text-sm text-muted">
@@ -74,7 +75,7 @@ function GoalCard({ p, onEdit }: { p: GoalPlan; onEdit: () => void }) {
 
       <div className="mt-4 text-sm flex-1">
         {p.done ? (
-          <p className="text-lime font-semibold">🎉 Goal reached!</p>
+          <p className="text-lime font-semibold flex items-center gap-2"><Glyph name="check" size={18} />Goal reached!</p>
         ) : p.needed === null ? (
           <p className="text-muted">
             {p.allocated > 0
@@ -82,7 +83,7 @@ function GoalCard({ p, onEdit }: { p: GoalPlan; onEdit: () => void }) {
               : 'No free money to save right now. Try lowering your everyday spending.'}
           </p>
         ) : onTrack ? (
-          <p className="text-muted">✅ Save <b className="text-lime">{peso(p.needed)}/month</b> and you'll reach it on time.</p>
+          <p className="text-muted flex gap-2"><Glyph name="check" size={18} className="text-lime mt-0.5" /><span>Save <b className="text-lime">{peso(p.needed)}/month</b> and you'll reach it on time.</span></p>
         ) : (
           <Suggestions p={p} />
         )}
@@ -109,7 +110,7 @@ function Suggestions({ p }: { p: GoalPlan }) {
           <>
             <ul className="space-y-0.5">
               {p.cuts.map((c) => (
-                <li key={c.category.id}>{c.category.icon} {c.category.name}: cut <b className="text-ink">{peso(c.cut)}</b>
+                <li key={c.category.id} className="flex flex-wrap items-center gap-x-1.5"><Glyph name={c.category.icon} size={15} />{c.category.name}: cut <b className="text-ink">{peso(c.cut)}</b>
                   <span className="text-muted"> ({peso(Math.round(c.current))} → {peso(Math.round(c.current - c.cut))})</span></li>
               ))}
             </ul>
@@ -136,12 +137,11 @@ function Option({ n, title, children }: { n: number; title: string; children: Re
   )
 }
 
-const EMOJIS = ['🎯', '📱', '💻', '✈️', '🏖️', '🎓', '🚗', '🏍️', '🏠', '💍', '🎄', '🛟', '👶', '🩺', '🎮', '🛋️']
 
 function GoalForm({ goal, onClose }: { goal: Goal | null; onClose: () => void }) {
   const { data, reload } = useData()
   const [name, setName] = useState(goal?.name ?? '')
-  const [emoji, setEmoji] = useState(goal?.emoji ?? '🎯')
+  const [emoji, setEmoji] = useState(goal ? glyphKey(goal.emoji, 'target') : 'target')
   const [amount, setAmount] = useState<number | ''>(goal?.target_amount ?? '')
   const [date, setDate] = useState(goal?.target_date ?? '')
   const [busy, setBusy] = useState(false)
@@ -169,8 +169,9 @@ function GoalForm({ goal, onClose }: { goal: Goal | null; onClose: () => void })
     <Sheet open onClose={onClose} title={goal ? 'Edit goal' : 'New goal'}>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
-          {EMOJIS.map((e) => (
-            <button key={e} onClick={() => setEmoji(e)} className={`size-10 rounded-xl text-xl ${emoji === e ? 'bg-lime/20 ring-2 ring-lime' : 'bg-surface-2'}`}>{e}</button>
+          {GOAL_ICONS.map((e) => (
+            <button key={e} onClick={() => setEmoji(e)} aria-label={e}
+              className={`size-10 rounded-xl flex items-center justify-center ${emoji === e ? 'bg-lime/20 ring-2 ring-lime text-lime' : 'bg-surface-2 text-muted'}`}><Glyph name={e} /></button>
           ))}
         </div>
         <div><label className="label">What are you saving for?</label>

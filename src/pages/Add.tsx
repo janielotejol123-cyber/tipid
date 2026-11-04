@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import Glyph from '../components/Glyph'
 import { IconBackspace, IconClose } from '../components/icons'
 import { ErrorText } from '../components/ui'
 import { useData } from '../lib/household'
@@ -114,7 +115,7 @@ export default function Add() {
                 <div className="flex flex-wrap gap-2">
                   {g.items.map((c) => (
                     <button key={c.id} className={`chip ${categoryId === c.id ? 'chip-on' : ''}`} onClick={() => setCategoryId(c.id)}>
-                      <span>{c.icon}</span>{c.name}
+                      <Glyph name={c.icon} size={16} />{c.name}
                     </button>
                   ))}
                 </div>
@@ -127,7 +128,7 @@ export default function Add() {
                 <div className="flex flex-wrap gap-2">
                   {goals.map((g) => (
                     <button key={g.id} className={`chip ${goalId === g.id ? 'chip-on' : ''}`} onClick={() => setGoalId(g.id)}>
-                      <span>{g.emoji}</span>{g.name}
+                      <Glyph name={g.emoji} size={16} fallback="target" />{g.name}
                     </button>
                   ))}
                 </div>

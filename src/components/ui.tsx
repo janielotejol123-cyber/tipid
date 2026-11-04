@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { statusCopy, type Status } from '../lib/budget'
+import Glyph from './Glyph'
 import { IconBack } from './icons'
 
 export function Logo({ className = '' }: { className?: string }) {
@@ -54,7 +55,7 @@ export function PageHeader({ title, back, right }: { title: string; back?: boole
 export function Empty({ icon, title, children }: { icon: string; title: string; children?: ReactNode }) {
   return (
     <div className="text-center py-8 px-4">
-      <div className="text-4xl mb-2">{icon}</div>
+      <div className="mx-auto mb-3 size-14 rounded-full bg-surface-2 text-muted flex items-center justify-center"><Glyph name={icon} size={26} /></div>
       <p className="font-semibold">{title}</p>
       {children && <div className="text-sm text-muted mt-1">{children}</div>}
     </div>

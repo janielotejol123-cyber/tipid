@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
+import Glyph from '../components/Glyph'
 import MoneyInput, { n } from '../components/MoneyInput'
-import { IconBack, IconClose, IconPlus } from '../components/icons'
+import { IconBack, IconCheck, IconClose, IconPlus } from '../components/icons'
 import { ErrorText, Logo, StatusPill } from '../components/ui'
 import { useAuth } from '../lib/auth'
 import { OK_RATIO, statusFor } from '../lib/budget'
@@ -15,26 +16,26 @@ interface Line { name: string; icon: string; on: boolean; amount: Money; due?: n
 interface Kid { name: string; birthYear: number | '' }
 
 const GOALS = [
-  { id: 'overspending', icon: '🛑', label: 'Stop overspending' },
-  { id: 'savings', icon: '🐷', label: 'Build my savings' },
-  { id: 'specific', icon: '📱', label: 'Save for something specific' },
-  { id: 'debt', icon: '💳', label: 'Pay off debt' },
-  { id: 'track', icon: '👀', label: 'Just track where money goes' },
+  { id: 'overspending', icon: 'stop', label: 'Stop overspending' },
+  { id: 'savings', icon: 'piggy', label: 'Build my savings' },
+  { id: 'specific', icon: 'target', label: 'Save for something specific' },
+  { id: 'debt', icon: 'card', label: 'Pay off debt' },
+  { id: 'track', icon: 'eye', label: 'Just track where money goes' },
 ]
 
 const DEFAULT_BILLS: Line[] = [
-  { name: 'House rent', icon: '🏠', on: true, amount: '', due: 5 },
-  { name: 'Water', icon: '💧', on: true, amount: '', due: 15 },
-  { name: 'Electricity', icon: '⚡', on: true, amount: '', due: 15 },
-  { name: 'Internet', icon: '📶', on: true, amount: '', due: 20 },
-  { name: 'Groceries', icon: '🛒', on: true, amount: '', due: '' },
+  { name: 'House rent', icon: 'home', on: true, amount: '', due: 5 },
+  { name: 'Water', icon: 'droplet', on: true, amount: '', due: 15 },
+  { name: 'Electricity', icon: 'zap', on: true, amount: '', due: 15 },
+  { name: 'Internet', icon: 'wifi', on: true, amount: '', due: 20 },
+  { name: 'Groceries', icon: 'cart', on: true, amount: '', due: '' },
 ]
 const DEFAULT_OTHER: Line[] = [
-  { name: 'Food & eating out', icon: '🍔', on: true, amount: '' },
-  { name: 'Transportation', icon: '🚌', on: true, amount: '' },
-  { name: 'Load & data', icon: '📱', on: true, amount: '' },
-  { name: 'Shopping', icon: '🛍️', on: true, amount: '' },
-  { name: 'School', icon: '🎒', on: false, amount: '' },
+  { name: 'Food & eating out', icon: 'utensils', on: true, amount: '' },
+  { name: 'Transportation', icon: 'bus', on: true, amount: '' },
+  { name: 'Load & data', icon: 'phone', on: true, amount: '' },
+  { name: 'Shopping', icon: 'bag', on: true, amount: '' },
+  { name: 'School', icon: 'backpack', on: false, amount: '' },
 ]
 
 const thisYear = new Date().getFullYear()
@@ -81,7 +82,7 @@ export default function Onboarding() {
           {GOALS.map((g) => (
             <button key={g.id} onClick={() => setGoal(g.id)}
               className={`w-full card !p-4 flex items-center gap-4 text-left border-2 transition ${goal === g.id ? 'border-lime' : 'border-transparent'}`}>
-              <span className="text-2xl">{g.icon}</span><span className="font-semibold">{g.label}</span>
+              <GlyphBox name={g.icon} on={goal === g.id} /><span className="font-semibold">{g.label}</span>
             </button>
           ))}
         </div>
@@ -94,10 +95,10 @@ export default function Onboarding() {
       body: (
         <div className="space-y-5">
           <div className="grid grid-cols-3 gap-2">
-            {([['solo', '🙋', 'Just me'], ['partner', '👫', 'Me + partner'], ['family', '👨‍👩‍👧', 'With kids']] as const).map(([id, icon, label]) => (
+            {([['solo', 'user', 'Just me'], ['partner', 'couple', 'Me + partner'], ['family', 'family', 'With kids']] as const).map(([id, icon, label]) => (
               <button key={id} onClick={() => { setType(id); if (id === 'family' && !kids.length) setKids([{ name: '', birthYear: '' }]); if (id !== 'family') setKids([]) }}
                 className={`card !p-4 text-center border-2 ${type === id ? 'border-lime' : 'border-transparent'}`}>
-                <div className="text-2xl">{icon}</div><div className="text-sm font-semibold mt-1">{label}</div>
+                <Glyph name={icon} size={26} className={`mx-auto ${type === id ? 'text-lime' : 'text-muted'}`} /><div className="text-sm font-semibold mt-2">{label}</div>
               </button>
             ))}
           </div>
@@ -168,7 +169,7 @@ export default function Onboarding() {
       body: (
         <div className="space-y-5">
           <div className="card bg-lime/10 text-sm">
-            💡 A good target is <b>3 months of fixed bills</b>{suggestedEf > 0 && <> — about <b className="text-lime">{peso(suggestedEf)}</b> for you</>}.
+            <Glyph name="bulb" size={18} className="inline -mt-0.5 mr-1.5 text-lime" />A good target is <b>3 months of fixed bills</b>{suggestedEf > 0 && <> — about <b className="text-lime">{peso(suggestedEf)}</b> for you</>}.
           </div>
           <div><label className="label">Target</label>
             <MoneyInput value={efTarget} onChange={setEfTarget} placeholder={suggestedEf ? String(suggestedEf) : '0'} /></div>
@@ -213,7 +214,7 @@ export default function Onboarding() {
               ? `Your expenses are ${peso(Math.round(-left))} more than your income. Tipid will help you find where to cut.`
               : income > 0 && spending / income > OK_RATIO
                 ? `Your income covers your expenses, but there's little room to save. Aim to keep at least ${peso(Math.round(income * 0.2))} (20%) each month.`
-                : `Your income covers your expenses and you can save about ${peso(Math.round(left))} a month. 🎉`}
+                : `Your income covers your expenses and you can save about ${peso(Math.round(left))} a month.`}
           </p>
           <ErrorText>{error}</ErrorText>
         </div>
@@ -257,15 +258,15 @@ export default function Onboarding() {
       const cats = [
         ...bills.filter((b) => b.on).map((b) => ({ household_id: hid, name: b.name, icon: b.icon, type: 'fixed', monthly_budget: n(b.amount), due_day: b.due || null })),
         ...other.filter((b) => b.on).map((b) => ({ household_id: hid, name: b.name, icon: b.icon, type: 'other', monthly_budget: n(b.amount), due_day: null })),
-        { household_id: hid, name: 'Medical', icon: '🏥', type: 'emergency', monthly_budget: 0, due_day: null },
-        { household_id: hid, name: 'Repairs', icon: '🔧', type: 'emergency', monthly_budget: 0, due_day: null },
+        { household_id: hid, name: 'Medical', icon: 'medical', type: 'emergency', monthly_budget: 0, due_day: null },
+        { household_id: hid, name: 'Repairs', icon: 'wrench', type: 'emergency', monthly_budget: 0, due_day: null },
       ]
       { const { error } = await supabase.from('categories').insert(cats, { defaultToNull: false }); if (error) throw error }
 
       const target = n(efTarget) || suggestedEf
       const goalsIns = [
-        target > 0 && { household_id: hid, name: 'Emergency fund', emoji: '🛟', target_amount: target, target_date: null, is_emergency_fund: true },
-        goalName.trim() && n(goalAmount) > 0 && { household_id: hid, name: goalName.trim(), emoji: '🎯', target_amount: n(goalAmount), target_date: goalDate || null, is_emergency_fund: false },
+        target > 0 && { household_id: hid, name: 'Emergency fund', emoji: 'lifebuoy', target_amount: target, target_date: null, is_emergency_fund: true },
+        goalName.trim() && n(goalAmount) > 0 && { household_id: hid, name: goalName.trim(), emoji: 'target', target_amount: n(goalAmount), target_date: goalDate || null, is_emergency_fund: false },
       ].filter((x): x is Exclude<typeof x, false | null | '' | 0> => !!x)
       if (goalsIns.length) {
         const { data: g, error } = await supabase.from('goals').insert(goalsIns, { defaultToNull: false }).select('id, is_emergency_fund')
@@ -311,6 +312,10 @@ export default function Onboarding() {
   )
 }
 
+function GlyphBox({ name, on }: { name: string; on: boolean }) {
+  return <span className={`size-11 rounded-2xl flex items-center justify-center shrink-0 ${on ? 'bg-lime text-bg' : 'bg-surface-2 text-lime'}`}><Glyph name={name} size={22} /></span>
+}
+
 function Row({ k, v }: { k: string; v: string }) {
   return <div className="flex justify-between"><span className="text-muted">{k}</span><span className="font-semibold">{v}</span></div>
 }
@@ -323,8 +328,8 @@ function LineEditor({ lines, setLines, withDue, total }: { lines: Line[]; setLin
         <div key={i} className={`card !p-3 transition ${l.on ? '' : 'opacity-50'}`}>
           <div className="flex items-center gap-3">
             <button onClick={() => upd(i, { on: !l.on })} aria-label={l.on ? 'Remove' : 'Include'}
-              className={`size-6 shrink-0 rounded-lg border-2 flex items-center justify-center text-xs font-bold ${l.on ? 'bg-lime border-lime text-bg' : 'border-line'}`}>{l.on && '✓'}</button>
-            <span className="text-xl">{l.icon}</span>
+              className={`size-6 shrink-0 rounded-lg border-2 flex items-center justify-center text-xs font-bold ${l.on ? 'bg-lime border-lime text-bg' : 'border-line'}`}>{l.on && <IconCheck size={14} strokeWidth={3} />}</button>
+            <Glyph name={l.icon} className="text-lime" />
             <input className="bg-transparent flex-1 min-w-0 font-semibold" value={l.name} onChange={(e) => upd(i, { name: e.target.value })} />
             <MoneyInput value={l.amount} onChange={(v) => upd(i, { amount: v, on: true })} className="!w-32 !h-10 !rounded-xl" />
           </div>
@@ -338,7 +343,7 @@ function LineEditor({ lines, setLines, withDue, total }: { lines: Line[]; setLin
           )}
         </div>
       ))}
-      <button className="btn-ghost btn-sm" onClick={() => setLines([...lines, { name: 'New item', icon: '💸', on: true, amount: '', due: '' }])}>
+      <button className="btn-ghost btn-sm" onClick={() => setLines([...lines, { name: 'New item', icon: 'wallet', on: true, amount: '', due: '' }])}>
         <IconPlus size={16} /> Add another
       </button>
       <p className="text-right text-muted pt-2">Total <b className="text-ink text-lg ml-1">{peso(total)}</b> / month</p>

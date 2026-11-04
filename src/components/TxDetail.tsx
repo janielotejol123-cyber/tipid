@@ -4,6 +4,7 @@ import { useData } from '../lib/household'
 import { peso, shortDate } from '../lib/money'
 import { supabase } from '../lib/supabase'
 import type { Transaction } from '../lib/types'
+import Glyph from './Glyph'
 import { IconTrash } from './icons'
 import { ErrorText, Sheet } from './ui'
 
@@ -34,8 +35,8 @@ export default function TxDetail({ tx, onClose }: { tx: Transaction | null; onCl
     <Sheet open onClose={onClose} title={kindLabel}>
       <div className="text-4xl font-extrabold mb-5">{tx.kind === 'expense' ? '−' : '+'} {peso(tx.amount)}</div>
       <dl className="space-y-3 text-sm mb-6">
-        {cat && <Row k="Category" v={`${cat.icon} ${cat.name}`} />}
-        {goal && <Row k="Goal" v={`${goal.emoji} ${goal.name}`} />}
+        {cat && <Row k="Category" v={<span className="inline-flex items-center gap-1.5"><Glyph name={cat.icon} size={16} />{cat.name}</span>} />}
+        {goal && <Row k="Goal" v={<span className="inline-flex items-center gap-1.5"><Glyph name={goal.emoji} size={16} fallback="target" />{goal.name}</span>} />}
         <Row k="Who" v={who?.name ?? '—'} />
         <Row k="Date" v={shortDate(tx.date)} />
         {tx.note && <Row k="Note" v={tx.note} />}
@@ -48,6 +49,6 @@ export default function TxDetail({ tx, onClose }: { tx: Transaction | null; onCl
   )
 }
 
-function Row({ k, v }: { k: string; v: string }) {
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4"><dt className="text-muted">{k}</dt><dd className="font-semibold text-right">{v}</dd></div>
 }
