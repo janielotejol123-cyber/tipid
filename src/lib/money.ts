@@ -21,7 +21,10 @@ export const ymd = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 export const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1)
 export const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1)
-export const sameMonth = (iso: string, d: Date) => iso.slice(0, 7) === ymd(d).slice(0, 7)
+export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+/** Monday of the week this date falls in */
+export const weekStart = (d: Date) => addDays(d, -((d.getDay() + 6) % 7))
+export const sameMonth =(iso: string, d: Date) => iso.slice(0, 7) === ymd(d).slice(0, 7)
 export const monthName = (d: Date, long = true) =>
   d.toLocaleDateString('en-PH', { month: long ? 'long' : 'short', year: 'numeric' })
 export const shortDate = (iso: string) =>

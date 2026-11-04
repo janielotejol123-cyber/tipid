@@ -197,6 +197,40 @@ export function monthSummary(s: Snapshot, month: Date): MonthSummary {
   }
 }
 
+export interface YearSummary {
+  year: number
+  /** months that have at least one record and aren't in the future */
+  monthsCounted: number
+  /** money that actually arrived, plus fixed salaries for the counted months; never an estimate */
+  income: number
+  /** the fixed-salary part of income; these have no transactions to list */
+  fixedIncome: number
+  spent: number
+  saved: number
+  months: { month: Date; income: number; spent: number; saved: number }[]
+}
+
+/** Whole-year totals, built from the same month figures the rest of Reports uses. */
+export function yearSummary(s: Snapshot, year: number): YearSummary {
+  const now = new Date()
+  const summaries = Array.from({ length: 12 }, (_, i) => new Date(year, i, 1))
+    .filter((d) => d <= now && s.transactions.some((t) => sameMonth(t.date, d)))
+    .map((d) => monthSummary(s, d))
+  const months = summaries.map((m) => ({
+    month: m.month, spent: m.spent, saved: m.saved,
+    income: m.plannedIncome + m.variableReceived + m.extraIncome,
+  }))
+  return {
+    year,
+    monthsCounted: months.length,
+    income: sum(months.map((m) => m.income)),
+    fixedIncome: sum(summaries.map((m) => m.plannedIncome)),
+    spent: sum(months.map((m) => m.spent)),
+    saved: sum(months.map((m) => m.saved)),
+    months,
+  }
+}
+
 // ───────────────────────── Savings plan (what to do) ─────────────────────────
 
 export interface Cut { category: Category; current: number; cut: number }

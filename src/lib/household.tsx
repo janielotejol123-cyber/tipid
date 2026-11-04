@@ -18,7 +18,8 @@ interface HouseholdState {
 }
 
 const Ctx = createContext<HouseholdState | null>(null)
-const HISTORY_MONTHS = 13
+// 24 months always reaches back to January of last year, so the Reports whole-year totals stay complete
+export const HISTORY_MONTHS = 24
 
 async function load(userId: string): Promise<{ data: Snapshot | null; me: Member | null }> {
   const { data: mine, error } = await supabase.from('members').select('*').eq('user_id', userId)

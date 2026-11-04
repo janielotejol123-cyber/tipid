@@ -10,7 +10,9 @@ export default function TxRow({ tx, data, onClick }: { tx: Transaction; data: Sn
   const who = tx.member_id ? data.members.find((m) => m.id === tx.member_id) : null
   const icon = tx.kind === 'saving' ? goal?.emoji ?? 'piggy' : tx.kind === 'income' ? (tx.income_id ? 'chart' : 'coins') : cat?.icon ?? 'wallet'
   const title = tx.kind === 'saving' ? `Saved · ${goal?.name ?? 'Goal'}` : tx.kind === 'income' ? (tx.income_id ? data.incomes.find((i) => i.id === tx.income_id)?.source ?? 'Income' : tx.note || 'Extra income') : isLateFee(tx) ? `${cat?.name ?? 'Bill'} · late fee` : cat?.name ?? 'Expense'
-  const sub = [who?.name, shortDate(tx.date), tx.kind === 'expense' && !isLateFee(tx) && tx.note].filter(Boolean).join(' · ')
+  // Income with a source uses the source as its title, so its note goes here; other income uses the note as the title
+  const showNote = tx.kind === 'expense' ? !isLateFee(tx) : tx.kind === 'income' && !!tx.income_id
+  const sub = [who?.name, shortDate(tx.date), showNote && tx.note].filter(Boolean).join(' · ')
   const sign = tx.kind === 'expense' ? '−' : '+'
   const tone = tx.kind === 'expense' ? '' : 'text-lime'
   return (

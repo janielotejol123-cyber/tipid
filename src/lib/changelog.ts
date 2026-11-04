@@ -1,6 +1,15 @@
 /** Newest first. Keep in sync with CHANGELOG.md and the "version" in package.json. */
 export const CHANGELOG: { version: string; date: string; title: string; items: string[] }[] = [
   {
+    version: '1.6.0', date: '2026-11-04', title: 'Weekly, monthly and yearly reports',
+    items: [
+      'Reports now has Weekly, Monthly and Yearly tabs.',
+      'Yearly shows your total income, spending and savings, with a month by month chart.',
+      'Tap an income source or spending category to see every entry behind it.',
+      'New Income received section shows the money that came in and who received it.',
+    ],
+  },
+  {
     version: '1.5.0', date: '2026-11-04', title: 'Add new names on the spot',
     items: [
       'When adding an expense or income, tap "+ New" to create a category, income source or person right there.',

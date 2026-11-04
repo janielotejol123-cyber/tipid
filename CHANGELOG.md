@@ -7,6 +7,13 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.6.0 — 2026-11-04 · Weekly, monthly and yearly reports
+- Reports: Weekly (Monday to Sunday), Monthly and Yearly tabs that stay near the same date when switching (`src/components/ReportViews.tsx`)
+- Yearly: totals from actual records only, month by month chart, income by source, spending by category (`yearSummary` in `src/lib/budget.ts`)
+- Income received section, and tap-to-expand income sources and spending categories with entry and piece counts
+- Income entries with a source now show their note
+- App loads 24 months of history (was 13) so last year's totals stay complete
+
 ## 1.5.0 — 2026-11-04 · Add new names on the spot
 - Add screen: "+ New category", "+ New source" (income that varies) and "+ New person" without leaving the screen (owner/adults)
 - Icon guessed from the category name

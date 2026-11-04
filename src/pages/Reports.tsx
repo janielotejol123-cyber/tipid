@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import { countPcs, IncomeBySource, Kpi, PeriodStepper, WeekReport, YearReport } from '../components/ReportViews'
 import TxDetail from '../components/TxDetail'
 import TxRow from '../components/TxRow'
 import Glyph from '../components/Glyph'
-import { IconBack, IconChevron } from '../components/icons'
+import { IconChevron } from '../components/icons'
 import { Empty, PageHeader, Progress, StatusPill } from '../components/ui'
 import { monthSummary, statusFor } from '../lib/budget'
 import { useData } from '../lib/household'
@@ -13,10 +14,35 @@ import type { Transaction } from '../lib/types'
 const TYPE_COLORS = { fixed: '#9ce46c', other: '#e1f7f7', emergency: '#f26b6b', uncategorized: '#8f978f' }
 const TYPE_LABEL = { fixed: 'Fixed bills', other: 'Everyday', emergency: 'Emergency', uncategorized: 'Other' }
 
+const TABS = [{ id: 'week', label: 'Weekly' }, { id: 'month', label: 'Monthly' }, { id: 'year', label: 'Yearly' }] as const
+type Tab = (typeof TABS)[number]['id']
+
 export default function Reports() {
-  const { data, plan } = useData()
-  const [month, setMonth] = useState(() => monthStart(new Date()))
+  const [tab, setTab] = useState<Tab>('month')
+  // One shared date, so switching tabs stays around the period being looked at
+  const [anchor, setAnchor] = useState(() => new Date())
   const [open, setOpen] = useState<Transaction | null>(null)
+
+  return (
+    <div>
+      <PageHeader title="Reports" />
+      <div role="tablist" aria-label="Report period" className="grid grid-cols-3 gap-1 rounded-full bg-surface-2 p-1 mb-4">
+        {TABS.map((t) => (
+          <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
+            className={`h-10 rounded-full text-sm font-semibold transition ${tab === t.id ? 'bg-lime text-bg' : 'text-muted'}`}>{t.label}</button>
+        ))}
+      </div>
+      {tab === 'week' && <WeekReport anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
+      {tab === 'month' && <MonthReport month={monthStart(anchor)} onMonth={setAnchor} onOpen={setOpen} />}
+      {tab === 'year' && <YearReport anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
+      <TxDetail tx={open} onClose={() => setOpen(null)} />
+    </div>
+  )
+}
+
+function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Date) => void; onOpen: (t: Transaction) => void }) {
+  const { data, plan } = useData()
+  const [openCat, setOpenCat] = useState<string | null>(null)
   const isCurrent = ymd(month) === ymd(monthStart(new Date()))
 
   const m = useMemo(() => monthSummary(data, month), [data, month])
@@ -49,16 +75,10 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader title="Reports" />
+      <PeriodStepper label={monthName(month)} prevLabel="Previous month" nextLabel="Next month"
+        onPrev={() => onMonth(addMonths(month, -1))} onNext={() => onMonth(addMonths(month, 1))} atEnd={isCurrent} />
 
-      <div className="flex items-center justify-between card !py-3 !px-3 mb-5">
-        <button className="size-10 rounded-full bg-surface-2 flex items-center justify-center" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month"><IconBack /></button>
-        <span className="font-bold">{monthName(month)}</span>
-        <button className="size-10 rounded-full bg-surface-2 flex items-center justify-center disabled:opacity-30" disabled={isCurrent}
-          onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month"><IconChevron /></button>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section className="card md:col-span-2">
           <div className="flex items-start justify-between gap-3">
             <p className="font-semibold text-lg">{verdict}</p>
@@ -82,6 +102,8 @@ export default function Reports() {
             </p>
           )}
         </section>
+
+        <IncomeBySource rows={txs} data={data} onOpen={onOpen} fixedIncome={m.plannedIncome} />
 
         <section className="card">
           <h2 className="font-bold mb-3">Where the money went</h2>
@@ -132,13 +154,27 @@ export default function Reports() {
               {m.byCategory.map(({ category: c, amount }) => {
                 const budget = c?.monthly_budget ?? 0
                 const over = budget > 0 && amount > budget
+                const key = c?.id ?? 'none'
+                const expanded = openCat === key
+                const rows = txs.filter((t) => t.kind === 'expense' && (t.category_id ?? 'none') === key)
                 return (
-                  <li key={c?.id ?? 'none'}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="flex items-center gap-2"><Glyph name={c?.icon} size={16} className="text-muted" />{c?.name ?? 'Uncategorized'}</span>
-                      <span className={`font-semibold ${over ? 'text-danger' : ''}`}>{peso(Math.round(amount))}{budget > 0 && <span className="text-muted font-normal"> / {peso(budget)}</span>}</span>
-                    </div>
-                    <Progress value={budget > 0 ? amount / budget : amount / Math.max(1, m.spent)} tone={over ? 'bg-danger' : 'bg-lime'} />
+                  <li key={key}>
+                    <button className="w-full text-left" aria-expanded={expanded} onClick={() => setOpenCat(expanded ? null : key)}>
+                      <div className="flex justify-between gap-2 text-sm mb-1">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <IconChevron size={14} className={`text-muted shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+                          <Glyph name={c?.icon} size={16} className="text-muted shrink-0" /><span className="truncate">{c?.name ?? 'Uncategorized'}</span>
+                        </span>
+                        <span className={`font-semibold whitespace-nowrap ${over ? 'text-danger' : ''}`}>{peso(Math.round(amount))}{budget > 0 && <span className="text-muted font-normal"> / {peso(budget)}</span>}</span>
+                      </div>
+                      <Progress value={budget > 0 ? amount / budget : amount / Math.max(1, m.spent)} tone={over ? 'bg-danger' : 'bg-lime'} />
+                    </button>
+                    {expanded && (
+                      <>
+                        <p className="text-xs text-muted mt-2">{rows.length} {rows.length === 1 ? 'entry' : 'entries'}{countPcs(rows) > 0 ? ` · ${countPcs(rows).toLocaleString('en-PH')} pcs` : ''}</p>
+                        <div className="divide-y divide-line">{rows.map((t) => <TxRow key={t.id} tx={t} data={data} onClick={() => onOpen(t)} />)}</div>
+                      </>
+                    )}
                   </li>
                 )
               })}
@@ -177,21 +213,10 @@ export default function Reports() {
         <section className="card md:col-span-2">
           <h2 className="font-bold mb-1">All transactions</h2>
           {txs.length === 0 ? <Empty icon="receipt" title="Nothing recorded" /> : (
-            <div className="divide-y divide-line">{txs.map((t) => <TxRow key={t.id} tx={t} data={data} onClick={() => setOpen(t)} />)}</div>
+            <div className="divide-y divide-line">{txs.map((t) => <TxRow key={t.id} tx={t} data={data} onClick={() => onOpen(t)} />)}</div>
           )}
         </section>
       </div>
-      <TxDetail tx={open} onClose={() => setOpen(null)} />
-    </div>
-  )
-}
-
-function Kpi({ k, v, sub, tone = '', subTone = 'text-muted' }: { k: string; v: string; sub?: string; tone?: string; subTone?: string }) {
-  return (
-    <div>
-      <p className="text-xs text-muted">{k}</p>
-      <p className={`text-xl font-extrabold ${tone}`}>{v}</p>
-      {sub && <p className={`text-xs ${subTone}`}>{sub}</p>}
     </div>
   )
 }
