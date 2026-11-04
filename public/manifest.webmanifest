@@ -1,0 +1,10 @@
+{
+  "name": "Tipid",
+  "short_name": "Tipid",
+  "description": "Family budgeting — see if your income covers your expenses.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121512",
+  "theme_color": "#121512",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
