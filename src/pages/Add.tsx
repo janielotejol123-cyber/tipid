@@ -11,7 +11,7 @@ import type { TxKind } from '../lib/types'
 const KINDS: { id: TxKind; label: string }[] = [
   { id: 'expense', label: 'Expense' },
   { id: 'saving', label: 'Savings' },
-  { id: 'income', label: 'Extra income' },
+  { id: 'income', label: 'Income' },
 ]
 
 /** GoTyme-style "send money" screen: big amount, keypad, then details. */
@@ -26,6 +26,8 @@ export default function Add() {
   const [categoryId, setCategoryId] = useState<string | null>(params.get('category'))
   const [goalId, setGoalId] = useState<string | null>(params.get('goal'))
   const [memberId, setMemberId] = useState<string | null>(me?.id ?? null)
+  const varSources = data.incomes.filter((i) => i.frequency === 'variable')
+  const [incomeId, setIncomeId] = useState<string | null>(params.get('income') ?? varSources[0]?.id ?? null)
   const [date, setDate] = useState(ymd(new Date()))
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -57,6 +59,7 @@ export default function Add() {
     const { data: tx, error } = await supabase.from('transactions').insert({
       household_id: data.household.id, member_id: memberId, kind, amount, date, note: note.trim() || null,
       category_id: kind === 'expense' ? categoryId : null, goal_id: kind === 'saving' ? goalId : null,
+      ...(kind === 'income' && incomeId ? { income_id: incomeId } : {}),
     }).select('id').single()
     if (error) { setBusy(false); return setError(error.message) }
     // Paying a fixed bill through Add also ticks it off in Bills
@@ -88,7 +91,7 @@ export default function Add() {
       {step === 'amount' ? (
         <>
           <div className="flex-1 flex flex-col items-center justify-center py-8">
-            <p className="text-muted text-sm mb-2">{kind === 'expense' ? 'How much did you spend?' : kind === 'saving' ? 'How much are you saving?' : 'How much extra did you get?'}</p>
+            <p className="text-muted text-sm mb-2">{kind === 'expense' ? 'How much did you spend?' : kind === 'saving' ? 'How much are you saving?' : 'How much did you receive?'}</p>
             <div className={`font-extrabold tracking-tight ${raw.length > 7 ? 'text-5xl' : 'text-6xl'} ${raw ? '' : 'text-muted'}`}>
               ₱{raw ? Number(raw.split('.')[0]).toLocaleString('en-PH') + (raw.includes('.') ? '.' + raw.split('.')[1] : '') : '0'}
             </div>
@@ -135,7 +138,25 @@ export default function Add() {
               </div>
             )}
             {kind === 'income' && (
-              <p className="text-sm text-muted card">Use this for <b className="text-ink">bonuses, sidelines or gifts</b>. Your regular salary is already counted from Budget settings.</p>
+              <div>
+                <p className="label">Where is it from?</p>
+                <div className="flex flex-wrap gap-2">
+                  {varSources.map((i) => (
+                    <button key={i.id} className={`chip ${incomeId === i.id ? 'chip-on' : ''}`}
+                      onClick={() => { setIncomeId(i.id); if (i.member_id) setMemberId(i.member_id) }}>
+                      <Glyph name="chart" size={16} />{i.source}
+                    </button>
+                  ))}
+                  <button className={`chip ${incomeId === null ? 'chip-on' : ''}`} onClick={() => setIncomeId(null)}>
+                    <Glyph name="gift" size={16} />Bonus / other
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-2">
+                  {incomeId
+                    ? 'Record each payment from your business or a project when you receive it.'
+                    : 'For one-time money like bonuses, 13th month or gifts. Fixed salaries are already counted automatically.'}
+                </p>
+              </div>
             )}
             {data.members.length > 1 && (
               <div>

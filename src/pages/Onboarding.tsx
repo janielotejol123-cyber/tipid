@@ -56,6 +56,8 @@ export default function Onboarding() {
   const [schedule, setSchedule] = useState<PaySchedule>('semi_monthly')
   const [myIncome, setMyIncome] = useState<Money>('')
   const [partnerIncome, setPartnerIncome] = useState<Money>('')
+  const [myKind, setMyKind] = useState<IncomeKind>('fixed')
+  const [partnerKind, setPartnerKind] = useState<IncomeKind>('fixed')
   const [bills, setBills] = useState<Line[]>(DEFAULT_BILLS)
   const [other, setOther] = useState<Line[]>(DEFAULT_OTHER)
   const [efTarget, setEfTarget] = useState<Money>('')
@@ -65,7 +67,11 @@ export default function Onboarding() {
   const [goalDate, setGoalDate] = useState('')
 
   const hasPartner = type !== 'solo'
-  const income = toMonthly(n(myIncome), schedule) + (hasPartner ? toMonthly(n(partnerIncome), schedule) : 0)
+  const monthlyOf = (v: Money, k: IncomeKind) => (k === 'variable' ? n(v) : toMonthly(n(v), schedule))
+  const income = monthlyOf(myIncome, myKind) + (hasPartner ? monthlyOf(partnerIncome, partnerKind) : 0)
+  const anyFixed = myKind === 'fixed' || (hasPartner && partnerKind === 'fixed')
+  const anyVaries = myKind === 'variable' || (hasPartner && partnerKind === 'variable')
+  const per = schedule === 'monthly' ? 'per month' : schedule === 'weekly' ? 'per week' : 'per payday'
   const fixed = bills.filter((b) => b.on).reduce((a, b) => a + n(b.amount), 0)
   const otherTotal = other.filter((b) => b.on).reduce((a, b) => a + n(b.amount), 0)
   const spending = fixed + otherTotal
@@ -130,23 +136,22 @@ export default function Onboarding() {
     },
     {
       title: 'How much do you earn?',
-      sub: 'Take-home pay (after tax and deductions).',
+      sub: 'Take-home pay. If you run a business or work per project, choose “Varies”.',
       ok: n(myIncome) > 0 || (hasPartner && n(partnerIncome) > 0),
       body: (
         <div className="space-y-5">
-          <div><label className="label">How often are you paid?</label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(payLabel) as PaySchedule[]).map((p) => (
-                <button key={p} className={`chip ${schedule === p ? 'chip-on' : ''}`} onClick={() => setSchedule(p)}>{payLabel[p]}</button>
-              ))}
-            </div></div>
-          <div><label className="label">{myName || 'Your'} pay {schedule === 'monthly' ? 'per month' : schedule === 'weekly' ? 'per week' : 'per payday'}</label>
-            <MoneyInput value={myIncome} onChange={setMyIncome} /></div>
-          {hasPartner && (
-            <div><label className="label">{partnerName || 'Partner'}'s pay {schedule === 'monthly' ? 'per month' : schedule === 'weekly' ? 'per week' : 'per payday'}</label>
-              <MoneyInput value={partnerIncome} onChange={setPartnerIncome} /></div>
+          <EarnerIncome name={myName || 'You'} kind={myKind} setKind={setMyKind} value={myIncome} setValue={setMyIncome} per={per} />
+          {hasPartner && <EarnerIncome name={partnerName || 'Partner'} kind={partnerKind} setKind={setPartnerKind} value={partnerIncome} setValue={setPartnerIncome} per={per} />}
+          {anyFixed && (
+            <div><label className="label">How often is the salary paid?</label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(payLabel) as PaySchedule[]).map((p) => (
+                  <button key={p} className={`chip ${schedule === p ? 'chip-on' : ''}`} onClick={() => setSchedule(p)}>{payLabel[p]}</button>
+                ))}
+              </div></div>
           )}
-          {income > 0 && <p className="text-sm text-muted">That's about <b className="text-ink">{peso(Math.round(income))}</b> a month.</p>}
+          {income > 0 && <p className="text-sm text-muted">That's about <b className="text-ink">{peso(Math.round(income))}</b> a month{anyVaries ? ' in a typical month' : ''}.</p>}
+          {anyVaries && <p className="text-xs text-muted">Business and project income changes month to month. Record money when it comes in, and Tipid will use your real 3-month average.</p>}
         </div>
       ),
     },
@@ -250,8 +255,8 @@ export default function Onboarding() {
       }
 
       const incomes = [
-        n(myIncome) > 0 && { household_id: hid, member_id: meRow.id, source: 'Salary', amount: n(myIncome), frequency: schedule },
-        partnerId && n(partnerIncome) > 0 && { household_id: hid, member_id: partnerId, source: 'Salary', amount: n(partnerIncome), frequency: schedule },
+        n(myIncome) > 0 && { household_id: hid, member_id: meRow.id, source: myKind === 'variable' ? 'Business / projects' : 'Salary', amount: n(myIncome), frequency: myKind === 'variable' ? 'variable' : schedule },
+        partnerId && n(partnerIncome) > 0 && { household_id: hid, member_id: partnerId, source: partnerKind === 'variable' ? 'Business / projects' : 'Salary', amount: n(partnerIncome), frequency: partnerKind === 'variable' ? 'variable' : schedule },
       ].filter((x): x is Exclude<typeof x, false | null | '' | 0> => !!x)
       if (incomes.length) { const { error } = await supabase.from('incomes').insert(incomes, { defaultToNull: false }); if (error) throw error }
 
@@ -308,6 +313,24 @@ export default function Onboarding() {
           {busy ? 'Setting up…' : last ? 'Start using Tipid' : 'Continue'}
         </button>
       </div>
+    </div>
+  )
+}
+
+type IncomeKind = 'fixed' | 'variable'
+
+function EarnerIncome({ name, kind, setKind, value, setValue, per }: {
+  name: string; kind: IncomeKind; setKind: (k: IncomeKind) => void; value: Money; setValue: (v: Money) => void; per: string
+}) {
+  return (
+    <div className="card !p-4 space-y-3">
+      <p className="font-semibold">{name}</p>
+      <div className="flex gap-2">
+        <button className={`chip flex-1 justify-center ${kind === 'fixed' ? 'chip-on' : ''}`} onClick={() => setKind('fixed')}><Glyph name="coins" size={16} />Salary (fixed)</button>
+        <button className={`chip flex-1 justify-center ${kind === 'variable' ? 'chip-on' : ''}`} onClick={() => setKind('variable')}><Glyph name="chart" size={16} />Varies</button>
+      </div>
+      <div><label className="label">{kind === 'variable' ? 'Business / projects — about how much in a typical month?' : `Pay ${per}`}</label>
+        <MoneyInput value={value} onChange={setValue} /></div>
     </div>
   )
 }

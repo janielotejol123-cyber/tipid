@@ -28,8 +28,44 @@ export const statusFor = (spending: number, income: number): Status => {
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + Number(b), 0)
 
-export const plannedMonthlyIncome = (incomes: Income[]) =>
-  sum(incomes.map((i) => toMonthly(Number(i.amount), i.frequency)))
+/** Regular (fixed) income per month — salaries etc. */
+export const fixedMonthlyIncome = (incomes: Income[]) =>
+  sum(incomes.filter((i) => i.frequency !== 'variable').map((i) => toMonthly(Number(i.amount), i.frequency)))
+
+export interface IncomeEstimate { amount: number; learned: boolean; low: number; high: number; months: number }
+
+/**
+ * Typical month for a 'varies' income (business, projects): average received over the last 3 months.
+ * Falls back to the typical amount the user entered until there's history.
+ */
+export function incomeEstimate(i: Income, s: Snapshot, month: Date): IncomeEstimate {
+  const start = ymd(addMonths(monthStart(month), -3))
+  const end = ymd(monthStart(month))
+  const perMonth = new Map<string, number>()
+  for (const t of s.transactions) {
+    if (t.kind !== 'income' || t.income_id !== i.id || t.date < start || t.date >= end) continue
+    perMonth.set(t.date.slice(0, 7), (perMonth.get(t.date.slice(0, 7)) ?? 0) + Number(t.amount))
+  }
+  const vals = [...perMonth.values()]
+  if (!vals.length) return { amount: Number(i.amount), learned: false, low: Number(i.amount), high: Number(i.amount), months: 0 }
+  // months with nothing received count as ₱0 once the source has history
+  const months = Math.max(vals.length, Math.min(3, monthsOfHistory(s, i, start, month)))
+  const avg = sum(vals) / months
+  return { amount: Math.round(avg), learned: true, low: months > vals.length ? 0 : Math.min(...vals), high: Math.max(...vals), months }
+}
+
+/** How many of the last 3 months this income source existed for */
+function monthsOfHistory(s: Snapshot, i: Income, start: string, month: Date) {
+  const first = s.transactions.filter((t) => t.income_id === i.id).map((t) => t.date).sort()[0]
+  if (!first) return 0
+  const from = first > start ? first : start
+  const a = new Date(from + 'T00:00:00'), b = monthStart(month)
+  return Math.max(1, (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth())
+}
+
+/** Expected income for a month: fixed income + typical month of each 'varies' source */
+export const expectedMonthlyIncome = (s: Snapshot, month: Date) =>
+  fixedMonthlyIncome(s.incomes) + sum(s.incomes.filter((i) => i.frequency === 'variable').map((i) => incomeEstimate(i, s, month).amount))
 
 export const goalSaved = (goalId: string, txs: Transaction[]) =>
   sum(txs.filter((t) => t.kind === 'saving' && t.goal_id === goalId).map((t) => t.amount))
@@ -79,6 +115,12 @@ export interface MonthSummary {
   month: Date
   plannedIncome: number
   extraIncome: number
+  /** business / project money received this month */
+  variableReceived: number
+  /** typical month for business / project income */
+  variableExpected: number
+  /** true while this month is still running and business income may still come in */
+  incomePending: boolean
   income: number
   spent: number
   saved: number
@@ -98,9 +140,15 @@ export interface MonthSummary {
 export function monthSummary(s: Snapshot, month: Date): MonthSummary {
   const txs = s.transactions.filter((t) => sameMonth(t.date, month))
   const expenses = txs.filter((t) => t.kind === 'expense')
-  const plannedIncome = plannedMonthlyIncome(s.incomes)
-  const extraIncome = sum(txs.filter((t) => t.kind === 'income').map((t) => t.amount))
-  const income = plannedIncome + extraIncome
+  const plannedIncome = fixedMonthlyIncome(s.incomes)
+  const incomeTx = txs.filter((t) => t.kind === 'income')
+  const extraIncome = sum(incomeTx.filter((t) => !t.income_id).map((t) => t.amount))
+  const variableReceived = sum(incomeTx.filter((t) => t.income_id).map((t) => t.amount))
+  const variableExpected = sum(s.incomes.filter((i) => i.frequency === 'variable').map((i) => incomeEstimate(i, s, month).amount))
+  // Current month: count the expected business income until the real amount passes it. Past months: what actually came in.
+  const isCurrent = ymd(monthStart(month)) === ymd(monthStart(new Date()))
+  const incomePending = isCurrent && variableReceived < variableExpected
+  const income = plannedIncome + extraIncome + (isCurrent ? Math.max(variableReceived, variableExpected) : variableReceived)
   const spent = sum(expenses.map((t) => t.amount))
   const saved = sum(txs.filter((t) => t.kind === 'saving').map((t) => t.amount))
 
@@ -129,6 +177,9 @@ export function monthSummary(s: Snapshot, month: Date): MonthSummary {
     month,
     plannedIncome,
     extraIncome,
+    variableReceived,
+    variableExpected,
+    incomePending,
     income,
     spent,
     saved,
@@ -240,7 +291,7 @@ function planGoal(goal: Goal, s: Snapshot, today: Date, available: number,
 }
 
 export function buildPlan(s: Snapshot, today = new Date()): Plan {
-  const income = plannedMonthlyIncome(s.incomes)
+  const income = expectedMonthlyIncome(s, today)
   const fixed = sum(activeCats(s, 'fixed').map((c) => billEstimate(c, s, today).amount))
   const emergencyBudget = sum(activeCats(s, 'emergency').map((c) => c.monthly_budget))
   const otherByCategory = averageOther(s, today)

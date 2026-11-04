@@ -4,7 +4,7 @@ import TxDetail from '../components/TxDetail'
 import TxRow from '../components/TxRow'
 import Glyph from '../components/Glyph'
 import { InstallBanner } from '../components/InstallApp'
-import { IconChart, IconChevron, IconPiggy, IconReceipt, IconSettings } from '../components/icons'
+import { IconChevron, IconPiggy, IconReceipt, IconSettings } from '../components/icons'
 import { Avatar, Empty, Logo, Progress, StatusPill } from '../components/ui'
 import { safeToSpend } from '../lib/budget'
 import { useData } from '../lib/household'
@@ -26,7 +26,7 @@ export default function Home() {
     { label: 'Expense', icon: <span className="text-2xl font-bold leading-none">−</span>, to: '/add?kind=expense' },
     { label: 'Pay bill', icon: <IconReceipt />, to: '/bills' },
     { label: 'Save', icon: <IconPiggy />, to: '/add?kind=saving' },
-    { label: 'Report', icon: <IconChart />, to: '/reports' },
+    { label: 'Income', icon: <Glyph name="coins" size={22} />, to: '/add?kind=income' },
   ]
 
   return (
@@ -55,10 +55,16 @@ export default function Home() {
             <p className="text-sm text-muted mt-1 relative">
               {safe < 0 ? "You're over budget this month." : `After bills and ${peso(Math.round(Math.max(plan.saveThisMonth, m.saved)))} savings.`}
             </p>
+            {m.incomePending && (
+              <p className="text-xs text-muted mt-2 relative">
+                Business/projects: {peso(Math.round(m.variableReceived))} received of ≈ {peso(Math.round(m.variableExpected))} usual.{' '}
+                <Link to="/add?kind=income" className="text-lime font-semibold">Record income</Link>
+              </p>
+            )}
             <Progress className="mt-5" value={m.income ? (m.spent + m.unpaidTotal) / m.income : 1}
               tone={m.status === 'ok' ? 'bg-lime' : m.status === 'tight' ? 'bg-warn' : 'bg-danger'} />
             <div className="grid grid-cols-3 gap-2 mt-4 text-sm relative">
-              <Stat k="Income" v={peso(Math.round(m.income))} />
+              <Stat k={m.incomePending ? 'Income (expected)' : 'Income'} v={`${m.incomePending ? '≈ ' : ''}${peso(Math.round(m.income))}`} />
               <Stat k="Spent" v={peso(Math.round(m.spent))} />
               <Stat k="Saved" v={peso(Math.round(m.saved))} tone="text-lime" />
             </div>

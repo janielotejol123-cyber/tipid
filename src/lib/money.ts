@@ -1,4 +1,4 @@
-import type { PaySchedule } from './types'
+import type { IncomeFrequency, PaySchedule } from './types'
 
 const fmt0 = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 })
 const fmt2 = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -7,7 +7,7 @@ const fmt2 = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP'
 export const peso = (n: number) => (Math.round(n * 100) % 100 === 0 ? fmt0 : fmt2).format(n)
 
 /** Convert a per-pay-period amount to a monthly amount */
-export const toMonthly = (amount: number, freq: PaySchedule) =>
+export const toMonthly = (amount: number, freq: IncomeFrequency) =>
   freq === 'weekly' ? (amount * 52) / 12 : freq === 'semi_monthly' ? amount * 2 : amount
 
 export const payLabel: Record<PaySchedule, string> = {

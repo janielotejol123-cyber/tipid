@@ -1,4 +1,6 @@
 export type PaySchedule = 'monthly' | 'semi_monthly' | 'weekly'
+/** 'variable' = business / project income: amount is a typical month, real amounts are recorded as received */
+export type IncomeFrequency = PaySchedule | 'variable'
 export type Role = 'owner' | 'adult' | 'teen' | 'child'
 export type CategoryType = 'fixed' | 'emergency' | 'other'
 export type TxKind = 'expense' | 'income' | 'saving'
@@ -27,7 +29,7 @@ export interface Income {
   member_id: string | null
   source: string
   amount: number
-  frequency: PaySchedule
+  frequency: IncomeFrequency
 }
 
 export interface Category {
@@ -60,6 +62,8 @@ export interface Transaction {
   kind: TxKind
   category_id: string | null
   goal_id: string | null
+  /** set when this is money received from a 'varies' income source */
+  income_id?: string | null
   amount: number
   date: string
   note: string | null

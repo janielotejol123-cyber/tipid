@@ -8,9 +8,10 @@ import { IconChevron, IconLogout, IconPlus } from '../components/icons'
 import { ErrorText, PageHeader, Sheet } from '../components/ui'
 import { useAuth } from '../lib/auth'
 import { useData } from '../lib/household'
+import { incomeEstimate } from '../lib/budget'
 import { payLabel, peso, toMonthly } from '../lib/money'
 import { supabase } from '../lib/supabase'
-import type { Category, CategoryType, Income, PaySchedule } from '../lib/types'
+import type { Category, CategoryType, Income, IncomeFrequency, PaySchedule } from '../lib/types'
 
 export default function Settings() {
   const { session } = useAuth()
@@ -61,21 +62,29 @@ export default function Settings() {
 
       <section className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <p className="section-title">Regular income</p>
+          <p className="section-title">Income</p>
           {canManage && <button className="text-sm text-lime font-semibold" onClick={() => setIncome('new')}>+ Add</button>}
         </div>
         <div className="card !p-2">
-          {data.incomes.map((i) => (
-            <button key={i.id} disabled={!canManage} onClick={() => setIncome(i)} className="w-full flex items-center gap-3 p-3 text-left">
-              <Glyph name="coins" className="text-lime" />
-              <span className="flex-1 min-w-0">
-                <span className="block font-medium truncate">{i.source} · {data.members.find((m) => m.id === i.member_id)?.name ?? '—'}</span>
-                <span className="block text-xs text-muted">{peso(i.amount)} · {payLabel[i.frequency]}</span>
-              </span>
-              <span className="font-semibold">{peso(Math.round(toMonthly(i.amount, i.frequency)))}<span className="text-xs text-muted">/mo</span></span>
-            </button>
-          ))}
-          <div className="flex justify-between p-3 border-t border-line text-sm"><span className="text-muted">Total per month</span><b>{peso(Math.round(plan.income))}</b></div>
+          {data.incomes.map((i) => {
+            const varies = i.frequency === 'variable'
+            const est = varies ? incomeEstimate(i, data, new Date()) : null
+            return (
+              <button key={i.id} disabled={!canManage} onClick={() => setIncome(i)} className="w-full flex items-center gap-3 p-3 text-left">
+                <Glyph name={varies ? 'chart' : 'coins'} className="text-lime" />
+                <span className="flex-1 min-w-0">
+                  <span className="block font-medium truncate">{i.source} · {data.members.find((m) => m.id === i.member_id)?.name ?? '—'}</span>
+                  <span className="block text-xs text-muted">
+                    {varies
+                      ? est!.learned ? `Varies · last 3 months ${peso(est!.low)}–${peso(est!.high)}` : 'Varies · estimate until you record income'
+                      : `${peso(i.amount)} · ${payLabel[i.frequency as PaySchedule]}`}
+                  </span>
+                </span>
+                <span className="font-semibold">{varies ? '≈ ' : ''}{peso(Math.round(varies ? est!.amount : toMonthly(i.amount, i.frequency)))}<span className="text-xs text-muted">/mo</span></span>
+              </button>
+            )
+          })}
+          <div className="flex justify-between p-3 border-t border-line text-sm"><span className="text-muted">Expected per month</span><b>{peso(Math.round(plan.income))}</b></div>
         </div>
       </section>
 
@@ -102,7 +111,9 @@ function IncomeForm({ income, onClose }: { income: Income | null; onClose: () =>
   const [source, setSource] = useState(income?.source ?? 'Salary')
   const [memberId, setMemberId] = useState(income?.member_id ?? me?.id ?? null)
   const [amount, setAmount] = useState<number | ''>(income?.amount ?? '')
-  const [freq, setFreq] = useState<PaySchedule>(income?.frequency ?? data.household.pay_schedule)
+  const [freq, setFreq] = useState<IncomeFrequency>(income?.frequency ?? data.household.pay_schedule)
+  const varies = freq === 'variable'
+  const [lastFixed, setLastFixed] = useState<PaySchedule>(income && income.frequency !== 'variable' ? income.frequency : data.household.pay_schedule)
   const [error, setError] = useState('')
 
   async function save() {
@@ -121,25 +132,40 @@ function IncomeForm({ income, onClose }: { income: Income | null; onClose: () =>
   return (
     <Sheet open onClose={onClose} title={income ? 'Edit income' : 'Add income'}>
       <div className="space-y-4">
-        <div><label className="label">Source</label><input className="field" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Salary, business, pension…" /></div>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={`card !p-3 text-left border-2 ${!varies ? 'border-lime' : 'border-transparent'}`} onClick={() => { setFreq(lastFixed); if (source === 'Business') setSource('Salary') }}>
+            <Glyph name="coins" className={!varies ? 'text-lime' : 'text-muted'} /><p className="font-semibold mt-2 text-sm">Fixed</p><p className="text-xs text-muted">Salary, pension, allowance</p>
+          </button>
+          <button className={`card !p-3 text-left border-2 ${varies ? 'border-lime' : 'border-transparent'}`} onClick={() => { setFreq('variable'); if (source === 'Salary') setSource('Business') }}>
+            <Glyph name="chart" className={varies ? 'text-lime' : 'text-muted'} /><p className="font-semibold mt-2 text-sm">Varies</p><p className="text-xs text-muted">Business, projects, commissions</p>
+          </button>
+        </div>
+        <div><label className="label">Name</label><input className="field" value={source} onChange={(e) => setSource(e.target.value)} placeholder={varies ? 'Sari-sari store, freelance projects…' : 'Salary, pension…'} /></div>
         <div><label className="label">Who earns it?</label>
           <div className="flex flex-wrap gap-2">
             {data.members.filter((m) => m.role !== 'child').map((m) => (
               <button key={m.id} className={`chip ${memberId === m.id ? 'chip-on' : ''}`} onClick={() => setMemberId(m.id)}>{m.name}</button>
             ))}
           </div></div>
-        <div><label className="label">How often?</label>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(payLabel) as PaySchedule[]).map((p) => (
-              <button key={p} className={`chip ${freq === p ? 'chip-on' : ''}`} onClick={() => setFreq(p)}>{payLabel[p]}</button>
-            ))}
-          </div></div>
-        <div><label className="label">Amount each time (take-home)</label><MoneyInput value={amount} onChange={setAmount} /></div>
-        {n(amount) > 0 && <p className="text-sm text-muted">= {peso(Math.round(toMonthly(n(amount), freq)))} per month</p>}
+        {varies ? (
+          <div><label className="label">In a typical month, about how much do you earn?</label><MoneyInput value={amount} onChange={setAmount} />
+            <p className="text-xs text-muted mt-1.5">Just an estimate. Record money when it comes in (➕ → Income) and Tipid will use your real 3-month average instead.</p></div>
+        ) : (
+          <>
+            <div><label className="label">How often?</label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(payLabel) as PaySchedule[]).map((p) => (
+                  <button key={p} className={`chip ${freq === p ? 'chip-on' : ''}`} onClick={() => { setFreq(p); setLastFixed(p) }}>{payLabel[p]}</button>
+                ))}
+              </div></div>
+            <div><label className="label">Amount each time (take-home)</label><MoneyInput value={amount} onChange={setAmount} /></div>
+            {n(amount) > 0 && <p className="text-sm text-muted">= {peso(Math.round(toMonthly(n(amount), freq)))} per month</p>}
+          </>
+        )}
         <ErrorText>{error}</ErrorText>
         <div className="flex gap-3">
           {income && <button className="btn-ghost !text-danger" onClick={remove}>Remove</button>}
-          <button className="btn-primary flex-1" disabled={n(amount) <= 0} onClick={save}><IconPlus size={16} />Save</button>
+          <button className="btn-primary flex-1" disabled={!varies && n(amount) <= 0} onClick={save}><IconPlus size={16} />Save</button>
         </div>
       </div>
     </Sheet>

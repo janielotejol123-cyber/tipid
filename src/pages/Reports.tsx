@@ -65,7 +65,11 @@ export default function Reports() {
             <StatusPill status={status} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-            <Kpi k="Income" v={peso(Math.round(m.income))} sub={m.extraIncome > 0 ? `incl. ${peso(m.extraIncome)} extra` : undefined} />
+            <Kpi k={m.incomePending ? 'Income (expected)' : 'Income'} v={`${m.incomePending ? '≈ ' : ''}${peso(Math.round(m.income))}`}
+              sub={m.incomePending ? `${peso(Math.round(m.variableReceived))} of ≈ ${peso(Math.round(m.variableExpected))} business received`
+                : m.variableReceived > 0 ? `incl. ${peso(Math.round(m.variableReceived))} business/projects`
+                : m.extraIncome > 0 ? `incl. ${peso(m.extraIncome)} extra` : undefined}
+              subTone={m.incomePending ? 'text-warn' : 'text-muted'} />
             <Kpi k="Spent" v={peso(Math.round(m.spent))}
               sub={prev.spent > 0 && !isCurrent ? `${diff >= 0 ? '▲' : '▼'} ${peso(Math.abs(Math.round(diff)))} vs last month` : isCurrent && m.unpaidTotal > 0 ? `+ ${peso(m.unpaidTotal)} bills due` : undefined}
               subTone={isCurrent ? 'text-warn' : diff > 0 ? 'text-danger' : 'text-lime'} />
