@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import Glyph from '../components/Glyph'
-import { IconBackspace, IconClose } from '../components/icons'
-import { ErrorText } from '../components/ui'
+import { IconBackspace, IconClose, IconPlus } from '../components/icons'
+import { ErrorText, Sheet } from '../components/ui'
 import { useData } from '../lib/household'
 import { peso, ymd } from '../lib/money'
 import { supabase } from '../lib/supabase'
-import type { TxKind } from '../lib/types'
+import type { CategoryType, TxKind } from '../lib/types'
 
 const KINDS: { id: TxKind; label: string }[] = [
   { id: 'expense', label: 'Expense' },
@@ -18,7 +18,8 @@ const KINDS: { id: TxKind; label: string }[] = [
 export default function Add() {
   const nav = useNavigate()
   const [params] = useSearchParams()
-  const { data, me, reload } = useData()
+  const { data, me, canManage, reload } = useData()
+  const [creating, setCreating] = useState<'category' | 'income' | 'person' | null>(null)
 
   const [kind, setKind] = useState<TxKind>((params.get('kind') as TxKind) || 'expense')
   const [raw, setRaw] = useState('')
@@ -112,6 +113,11 @@ export default function Add() {
             <div className="text-4xl font-extrabold">{peso(amount)}</div>
           </div>
           <div className="flex-1 space-y-6">
+            {kind === 'expense' && canManage && (
+              <div className="-mb-3 flex justify-end">
+                <button className="text-sm text-lime font-semibold flex items-center gap-1" onClick={() => setCreating('category')}><IconPlus size={16} />New category</button>
+              </div>
+            )}
             {kind === 'expense' && groups.filter((g) => g.items.length).map((g) => (
               <div key={g.title}>
                 <p className="label">{g.title}</p>
@@ -150,6 +156,7 @@ export default function Add() {
                   <button className={`chip ${incomeId === null ? 'chip-on' : ''}`} onClick={() => setIncomeId(null)}>
                     <Glyph name="gift" size={16} />Bonus / other
                   </button>
+                  {canManage && <NewChip onClick={() => setCreating('income')}>New source</NewChip>}
                 </div>
                 <p className="text-xs text-muted mt-2">
                   {incomeId
@@ -158,13 +165,14 @@ export default function Add() {
                 </p>
               </div>
             )}
-            {data.members.length > 1 && (
+            {(data.members.length > 1 || canManage) && (
               <div>
                 <p className="label">{kind === 'expense' ? 'Who spent it?' : 'Who?'}</p>
                 <div className="flex flex-wrap gap-2">
                   {data.members.map((m) => (
                     <button key={m.id} className={`chip ${memberId === m.id ? 'chip-on' : ''}`} onClick={() => setMemberId(m.id)}>{m.name}</button>
                   ))}
+                  {canManage && <NewChip onClick={() => setCreating('person')}>New person</NewChip>}
                 </div>
               </div>
             )}
@@ -179,6 +187,100 @@ export default function Add() {
           </button>
         </div>
       )}
+      {creating && (
+        <QuickCreate what={creating} householdId={data.household.id} memberId={memberId}
+          onClose={() => setCreating(null)}
+          onCreated={async (id) => {
+            await reload()
+            if (creating === 'category') setCategoryId(id)
+            if (creating === 'income') setIncomeId(id)
+            if (creating === 'person') setMemberId(id)
+            setCreating(null)
+          }} />
+      )}
     </div>
+  )
+}
+
+function NewChip({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button className="chip !bg-transparent border-dashed !border-line text-lime" onClick={onClick}>
+      <IconPlus size={16} />{children}
+    </button>
+  )
+}
+
+/** Guess a fitting icon from the typed name */
+const ICON_WORDS: [RegExp, string][] = [
+  [/food|eat|meal|lunch|dinner|snack|milk ?tea|coffee|resto|jollibee|mcdo/i, 'utensils'],
+  [/grocer|market|palengke|supermarket/i, 'cart'],
+  [/grab|taxi|jeep|bus|fare|commute|transpo|mrt|lrt|tricycle/i, 'bus'],
+  [/gas|fuel|diesel/i, 'fuel'], [/car|parking|toll/i, 'car'], [/motor/i, 'bike'],
+  [/load|data|phone|mobile|globe|smart/i, 'phone'], [/internet|wifi|pldt|converge/i, 'wifi'],
+  [/water/i, 'droplet'], [/electric|meralco|power/i, 'zap'], [/rent|house|condo|home/i, 'home'],
+  [/school|tuition|book|project|allowance/i, 'backpack'], [/medic|doctor|hospital|check.?up|dental/i, 'medical'],
+  [/medicine|vitamin|pharm|drug/i, 'pill'], [/pet|dog|cat|vet/i, 'paw'], [/baby|diaper|milk/i, 'baby'],
+  [/gift|birthday|party|wedding/i, 'gift'], [/game|netflix|spotify|movie|stream/i, 'gamepad'],
+  [/cloth|shop|lazada|shopee|mall/i, 'bag'], [/repair|fix|plumb/i, 'wrench'], [/loan|credit|card|debt/i, 'card'],
+  [/salon|hair|haircut|barber|beauty/i, 'sparkles'], [/church|donat|charity/i, 'gift'],
+]
+const guessIcon = (name: string, fallback: string) => ICON_WORDS.find(([re]) => re.test(name))?.[1] ?? fallback
+
+function QuickCreate({ what, householdId, memberId, onClose, onCreated }: {
+  what: 'category' | 'income' | 'person'; householdId: string; memberId: string | null
+  onClose: () => void; onCreated: (id: string) => void
+}) {
+  const [name, setName] = useState('')
+  const [type, setType] = useState<CategoryType>('other')
+  const [adult, setAdult] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const title = what === 'category' ? 'New category' : what === 'income' ? 'New income source' : 'New person'
+  const placeholder = what === 'category' ? 'e.g. Milk tea, Haircut, Pet food' : what === 'income' ? 'e.g. Online selling, Freelance project' : 'e.g. Lola, Tito Ben, Yaya'
+
+  async function save() {
+    setBusy(true); setError('')
+    const n = name.trim()
+    const q = what === 'category'
+      ? supabase.from('categories').insert({ household_id: householdId, name: n, type, icon: guessIcon(n, type === 'fixed' ? 'receipt' : type === 'emergency' ? 'medical' : 'wallet'), monthly_budget: 0 })
+      : what === 'income'
+        ? supabase.from('incomes').insert({ household_id: householdId, member_id: memberId, source: n, amount: 0, frequency: 'variable' })
+        : supabase.from('members').insert({ household_id: householdId, name: n, role: adult ? 'adult' : 'child' })
+    const { data, error } = await q.select('id').single()
+    setBusy(false)
+    if (error) return setError(error.message)
+    onCreated((data as { id: string }).id)
+  }
+
+  return (
+    <Sheet open onClose={onClose} title={title}>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          {what === 'category' && <span className="size-12 rounded-2xl bg-surface-2 text-lime flex items-center justify-center shrink-0"><Glyph name={guessIcon(name, 'wallet')} size={22} /></span>}
+          <input className="field" autoFocus value={name} placeholder={placeholder} onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) save() }} />
+        </div>
+        {what === 'category' && (
+          <div className="flex gap-2">
+            {([['other', 'Everyday'], ['fixed', 'Monthly bill'], ['emergency', 'Emergency']] as const).map(([t, l]) => (
+              <button key={t} className={`chip flex-1 justify-center ${type === t ? 'chip-on' : ''}`} onClick={() => setType(t)}>{l}</button>
+            ))}
+          </div>
+        )}
+        {what === 'person' && (
+          <>
+            <div className="flex gap-2">
+              <button className={`chip flex-1 justify-center ${adult ? 'chip-on' : ''}`} onClick={() => setAdult(true)}>Adult</button>
+              <button className={`chip flex-1 justify-center ${!adult ? 'chip-on' : ''}`} onClick={() => setAdult(false)}>Child</button>
+            </div>
+            <p className="text-xs text-muted">They're added to Family without a login. You can invite adults to log in from the Family tab.</p>
+          </>
+        )}
+        {what === 'income' && <p className="text-xs text-muted">Saved as income that varies (business, projects). Tipid learns its usual amount from what you record.</p>}
+        {what === 'category' && <p className="text-xs text-muted">You can set a monthly budget for it later in Budget settings.</p>}
+        <ErrorText>{error}</ErrorText>
+        <button className="btn-primary w-full" disabled={!name.trim() || busy} onClick={save}>{busy ? 'Adding…' : 'Add and use'}</button>
+      </div>
+    </Sheet>
   )
 }
