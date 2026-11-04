@@ -7,6 +7,10 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.4.3 — 2026-11-04 · iPhone bottom menu fix
+- iOS status bar style `black` (was `black-translucent`): iOS 18 clipped the bottom of translucent home-screen apps by the status-bar height (iPhone 16 Pro). Reverted 1.4.2's screen-height stretch.
+- Note: iOS applies the status bar style only when the app is added to the home screen — remove and re-add once.
+
 ## 1.4.2 — 2026-11-04 · iPhone bottom menu
 - iOS home-screen apps report a layout height short by the status bar; the mobile shell and bottom sheets now use the measured screen height (`--app-h`, `src/lib/viewport.ts`)
 - Display diagnostics line under Settings → About → What's new

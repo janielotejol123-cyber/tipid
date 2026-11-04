@@ -1,6 +1,10 @@
 /** Newest first. Keep in sync with CHANGELOG.md and the "version" in package.json. */
 export const CHANGELOG: { version: string; date: string; title: string; items: string[] }[] = [
   {
+    version: '1.4.3', date: '2026-11-04', title: 'iPhone bottom menu fix',
+    items: ['Solid black top bar on iPhone so the bottom menu sits on the bottom edge (re-add Tipid to your home screen once).'],
+  },
+  {
     version: '1.4.2', date: '2026-11-04', title: 'iPhone bottom menu',
     items: ['Fixed the empty space under the bottom menu in the iPhone home-screen app.'],
   },

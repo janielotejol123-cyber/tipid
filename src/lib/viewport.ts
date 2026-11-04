@@ -1,14 +1,15 @@
-import { isIOS, isStandalone } from './install'
+import { isStandalone } from './install'
 
 /**
- * iPhone home-screen apps (status bar "black-translucent" + viewport-fit=cover) report a layout height
- * that is short by the status-bar height, leaving an empty strip at the bottom. We measure the real
- * screen and expose it as --app-h, which the mobile shell and bottom sheets use.
+ * Visible app height as --app-h (used by the mobile shell and bottom sheets).
+ * The iPhone status bar is solid black (index.html), so iOS starts the app below it and
+ * gives the full height to the bottom edge — no translucent-status-bar height bug.
  */
 export function measureAppHeight() {
   const portrait = window.matchMedia('(orientation: portrait)').matches
   const physical = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)
-  const h = isIOS() && isStandalone() ? Math.max(window.innerHeight, physical) : window.innerHeight
+  // Use the visible height iOS gives us (stretching to the physical screen got clipped on iPhone 16 Pro)
+  const h = window.innerHeight
   document.documentElement.style.setProperty('--app-h', `${h}px`)
   return { inner: window.innerHeight, screen: physical, used: h }
 }
