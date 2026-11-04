@@ -226,22 +226,24 @@ export default function Onboarding() {
 
   async function finish() {
     setBusy(true); setError('')
+    let hid: string | null = null
     try {
       const uid = session!.user.id
-      const { data: hid, error: e1 } = await supabase.rpc('create_household', {
+      const { data: newId, error: e1 } = await supabase.rpc('create_household', {
         p_name: `${myName.trim()}'s household`, p_owner_name: myName.trim(), p_pay_schedule: schedule, p_main_goal: goal,
       })
       if (e1) throw e1
+      hid = newId as string
       const { data: meRow, error: e2 } = await supabase.from('members').select('id').eq('household_id', hid).eq('user_id', uid).single()
       if (e2) throw e2
 
       const extra = [
-        ...(hasPartner ? [{ household_id: hid, name: partnerName.trim(), role: 'adult' }] : []),
+        ...(hasPartner ? [{ household_id: hid, name: partnerName.trim(), role: 'adult', birth_year: null }] : []),
         ...kids.filter((k) => k.name.trim()).map((k) => ({ household_id: hid, name: k.name.trim(), role: roleForKid(k.birthYear), birth_year: k.birthYear || null })),
       ]
       let partnerId: string | null = null
       if (extra.length) {
-        const { data, error } = await supabase.from('members').insert(extra).select('id, role')
+        const { data, error } = await supabase.from('members').insert(extra, { defaultToNull: false }).select('id, role')
         if (error) throw error
         partnerId = hasPartner ? data[0].id : null
       }
@@ -250,23 +252,23 @@ export default function Onboarding() {
         n(myIncome) > 0 && { household_id: hid, member_id: meRow.id, source: 'Salary', amount: n(myIncome), frequency: schedule },
         partnerId && n(partnerIncome) > 0 && { household_id: hid, member_id: partnerId, source: 'Salary', amount: n(partnerIncome), frequency: schedule },
       ].filter((x): x is Exclude<typeof x, false | null | '' | 0> => !!x)
-      if (incomes.length) { const { error } = await supabase.from('incomes').insert(incomes); if (error) throw error }
+      if (incomes.length) { const { error } = await supabase.from('incomes').insert(incomes, { defaultToNull: false }); if (error) throw error }
 
       const cats = [
         ...bills.filter((b) => b.on).map((b) => ({ household_id: hid, name: b.name, icon: b.icon, type: 'fixed', monthly_budget: n(b.amount), due_day: b.due || null })),
-        ...other.filter((b) => b.on).map((b) => ({ household_id: hid, name: b.name, icon: b.icon, type: 'other', monthly_budget: n(b.amount) })),
-        { household_id: hid, name: 'Medical', icon: '🏥', type: 'emergency', monthly_budget: 0 },
-        { household_id: hid, name: 'Repairs', icon: '🔧', type: 'emergency', monthly_budget: 0 },
+        ...other.filter((b) => b.on).map((b) => ({ household_id: hid, name: b.name, icon: b.icon, type: 'other', monthly_budget: n(b.amount), due_day: null })),
+        { household_id: hid, name: 'Medical', icon: '🏥', type: 'emergency', monthly_budget: 0, due_day: null },
+        { household_id: hid, name: 'Repairs', icon: '🔧', type: 'emergency', monthly_budget: 0, due_day: null },
       ]
-      { const { error } = await supabase.from('categories').insert(cats); if (error) throw error }
+      { const { error } = await supabase.from('categories').insert(cats, { defaultToNull: false }); if (error) throw error }
 
       const target = n(efTarget) || suggestedEf
       const goalsIns = [
-        target > 0 && { household_id: hid, name: 'Emergency fund', emoji: '🛟', target_amount: target, is_emergency_fund: true },
-        goalName.trim() && n(goalAmount) > 0 && { household_id: hid, name: goalName.trim(), emoji: '🎯', target_amount: n(goalAmount), target_date: goalDate || null },
+        target > 0 && { household_id: hid, name: 'Emergency fund', emoji: '🛟', target_amount: target, target_date: null, is_emergency_fund: true },
+        goalName.trim() && n(goalAmount) > 0 && { household_id: hid, name: goalName.trim(), emoji: '🎯', target_amount: n(goalAmount), target_date: goalDate || null, is_emergency_fund: false },
       ].filter((x): x is Exclude<typeof x, false | null | '' | 0> => !!x)
       if (goalsIns.length) {
-        const { data: g, error } = await supabase.from('goals').insert(goalsIns).select('id, is_emergency_fund')
+        const { data: g, error } = await supabase.from('goals').insert(goalsIns, { defaultToNull: false }).select('id, is_emergency_fund')
         if (error) throw error
         const ef = g.find((x) => x.is_emergency_fund)
         if (ef && n(efSaved) > 0) {
@@ -279,7 +281,9 @@ export default function Onboarding() {
       { const { error } = await supabase.from('households').update({ emergency_target: target }).eq('id', hid); if (error) throw error }
       await reload()
     } catch (e) {
-      setError((e as { message?: string }).message ?? String(e))
+      // Undo the half-created household so "try again" starts fresh (deletes cascade)
+      if (hid) await supabase.from('households').delete().eq('id', hid)
+      setError(`Something went wrong while saving. Please try again. (${(e as { message?: string }).message ?? String(e)})`)
       setBusy(false)
     }
   }
