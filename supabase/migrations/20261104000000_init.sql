@@ -201,3 +201,10 @@ create policy "delete bills" on public.bill_payments for delete using (is_member
 
 -- Realtime for family sync
 alter publication supabase_realtime add table public.transactions, public.bill_payments, public.goals;
+
+-- API access (RLS above still limits rows to the user's own household)
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+
+-- Tell the API to pick up the new tables right away
+notify pgrst, 'reload schema';
