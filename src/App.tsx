@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './components/AppShell'
+import { UpdateNotice } from './components/VersionInfo'
 import { ErrorText, Spinner } from './components/ui'
 import { AuthProvider, useAuth } from './lib/auth'
 import { HouseholdProvider, useHousehold } from './lib/household'
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <UpdateNotice />
         <AuthGate />
       </BrowserRouter>
     </AuthProvider>

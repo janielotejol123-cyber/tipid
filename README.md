@@ -41,3 +41,13 @@ src/lib/household.tsx loads household data + realtime family sync
 src/pages/            Login, Onboarding, Home, Add, Bills, Goals, Family, Reports, Settings, Join
 supabase/migrations/  schema + row level security
 ```
+
+## Versioning & releases
+
+Semantic versioning (`MAJOR.MINOR.PATCH`), version lives in `package.json`. See [`CHANGELOG.md`](CHANGELOG.md).
+
+1. Add the release notes to `src/lib/changelog.ts` (shown in the app under Settings → About → What's new) and `CHANGELOG.md`.
+2. `npm version minor` (new features) or `npm version patch` (fixes) — bumps `package.json`, commits and creates a `vX.Y.Z` tag.
+3. `git push --follow-tags` — Cloudflare deploys; open apps show "New version available".
+
+The build writes `/version.json` (version, commit, build date). The app checks it when opened/foregrounded and every 30 minutes.

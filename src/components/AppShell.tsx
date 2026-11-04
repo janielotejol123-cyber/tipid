@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useData } from '../lib/household'
 import { supabase } from '../lib/supabase'
 import { IconChart, IconHome, IconLogout, IconPlus, IconReceipt, IconSettings, IconTarget, IconUsers } from './icons'
 import { Logo } from './ui'
+import { versionLabel } from '../lib/version'
 
 type NavItem = { to: string; label: string; icon: (p: { size?: number }) => React.ReactElement; end?: boolean }
 const tabs: NavItem[] = [
@@ -43,6 +44,7 @@ export default function AppShell() {
         <button onClick={() => supabase.auth.signOut()} className="mt-auto flex items-center gap-3 px-3 h-11 text-muted hover:text-ink">
           <IconLogout size={20} /> Sign out
         </button>
+        <Link to="/settings" className="px-3 text-xs text-muted/60 hover:text-muted">Tipid {versionLabel}</Link>
       </aside>
 
       <main ref={scroller} className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain md:overflow-visible">

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { ErrorText, Logo } from '../components/ui'
 import { supabase } from '../lib/supabase'
+import { versionLabel } from '../lib/version'
 
 export default function Login() {
   const [mode, setMode] = useState<'in' | 'up'>('in')
@@ -54,6 +55,7 @@ export default function Login() {
             {mode === 'in' ? 'Create an account' : 'Sign in'}
           </button>
         </p>
+        <p className="text-center text-xs text-muted/60 pb-4">Tipid {versionLabel}</p>
       </div>
     </div>
   )

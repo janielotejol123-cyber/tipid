@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import CategoryForm from '../components/CategoryForm'
 import Glyph from '../components/Glyph'
 import { InstallRow } from '../components/InstallApp'
+import { AboutSection } from '../components/VersionInfo'
 import MoneyInput, { n } from '../components/MoneyInput'
 import { IconChevron, IconLogout, IconPlus } from '../components/icons'
 import { ErrorText, PageHeader, Sheet } from '../components/ui'
@@ -97,6 +98,7 @@ export default function Settings() {
       {section('emergency', 'Emergency categories', 'For unplanned costs. Pay from your emergency fund when possible.')}
 
       <section className="mb-6"><p className="section-title mb-2">App</p><InstallRow /></section>
+      <AboutSection />
 
       <button onClick={() => supabase.auth.signOut()} className="btn-ghost w-full md:hidden"><IconLogout size={18} />Sign out</button>
 
