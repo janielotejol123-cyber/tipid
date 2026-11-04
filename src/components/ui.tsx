@@ -15,7 +15,7 @@ export function Logo({ className = '' }: { className?: string }) {
 export function StatusPill({ status }: { status: Status }) {
   const s = statusCopy[status]
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${s.tone}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 ${s.tone}`}>
       <span className="size-1.5 rounded-full bg-current" />{s.label}
     </span>
   )

@@ -81,7 +81,7 @@ function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Dat
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section className="card md:col-span-2">
           <div className="flex items-start justify-between gap-3">
-            <p className="font-semibold text-lg">{verdict}</p>
+            <p className="text-sm text-muted min-w-0">{verdict}</p>
             <StatusPill status={status} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
@@ -108,7 +108,7 @@ function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Dat
         <section className="card">
           <h2 className="font-bold mb-3">Where the money went</h2>
           {pie.length === 0 ? <Empty icon="chart" title="No expenses this month" /> : (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <div className="size-36 shrink-0">
                 <ResponsiveContainer>
                   <PieChart>
@@ -118,7 +118,7 @@ function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Dat
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="flex-1 space-y-2 text-sm">
+              <ul className="flex-1 min-w-40 space-y-2 text-sm">
                 {pie.map((p) => (
                   <li key={p.key} className="flex items-center gap-2">
                     <span className="size-2.5 rounded-full" style={{ background: TYPE_COLORS[p.key] }} />

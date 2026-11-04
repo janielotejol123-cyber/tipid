@@ -20,7 +20,7 @@ export default function Goals() {
       <PageHeader title="Savings & goals"
         right={canManage && <button className="btn-ghost btn-sm" onClick={() => setEditing('new')}><IconPlus size={16} />New goal</button>} />
 
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="card">
           <p className="text-sm text-muted">Free money each month</p>
           <p className={`text-2xl font-extrabold mt-1 ${plan.free < 0 ? 'text-danger' : ''}`}>{peso(Math.round(plan.free))}</p>
@@ -39,7 +39,7 @@ export default function Goals() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {plan.emergency && <GoalCard p={plan.emergency} onEdit={() => canManage && setEditing(plan.emergency!.goal)} />}
         {plan.goals.map((p) => <GoalCard key={p.goal.id} p={p} onEdit={() => canManage && setEditing(p.goal)} />)}
       </div>

@@ -42,7 +42,7 @@ export default function Home() {
         <Link to="/settings" className="md:hidden size-10 rounded-full bg-surface flex items-center justify-center" aria-label="Settings"><IconSettings size={20} /></Link>
       </div>
 
-      <div className="grid md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="md:col-span-3 space-y-6">
           {/* Balance card */}
           <section className="rounded-3xl p-6 bg-gradient-to-br from-surface-2 to-surface border border-line relative overflow-hidden">

@@ -7,6 +7,11 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.7.1 — 2026-11-05 · Phone layout fix
+- Home and Goals: `grid-cols-1` on the mobile grid. Without it the implicit column grew to fit long `truncate` text, so the page scrolled sideways.
+- Reports: monthly verdict is `text-sm text-muted`, so the amounts lead. "Where the money went" wraps on very narrow phones.
+- `StatusPill` never wraps
+
 ## 1.7.0 — 2026-11-05 · Password tools and a clearer Settings
 - Show/hide eye on password fields (`src/components/PasswordField.tsx`); Edge's built-in reveal button hidden so there is only one
 - Change password: checks the current password, sets the new one (8 characters minimum), then signs out other devices with `signOut({ scope: 'others' })` (`src/components/ChangePassword.tsx`)

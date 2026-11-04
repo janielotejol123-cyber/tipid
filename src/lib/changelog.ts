@@ -1,6 +1,13 @@
 /** Newest first. Keep in sync with CHANGELOG.md and the "version" in package.json. */
 export const CHANGELOG: { version: string; date: string; title: string; items: string[] }[] = [
   {
+    version: '1.7.1', date: '2026-11-05', title: 'Phone layout fix',
+    items: [
+      'Home no longer slides sideways on phones when an entry has a long note.',
+      'Reports: the monthly summary line is smaller so the amounts stand out, and the status label stays on one line.',
+    ],
+  },
+  {
     version: '1.7.0', date: '2026-11-05', title: 'Password tools and a clearer Settings',
     items: [
       'Tap the eye on the login screen to show or hide your password.',
