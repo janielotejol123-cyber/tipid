@@ -126,7 +126,7 @@ export default function Home() {
                         {b.due_day ? (late ? `Overdue · was due on the ${ord(b.due_day)}` : `Due on the ${ord(b.due_day)}`) : 'This month'}
                       </span>
                     </span>
-                    <span className="font-bold">{peso(b.monthly_budget)}</span>
+                    <span className="font-bold">{m.estimates.get(b.id)?.varies ? '≈ ' : ''}{peso(m.estimates.get(b.id)?.amount ?? b.monthly_budget)}</span>
                   </div>
                 )
               })}

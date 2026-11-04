@@ -37,6 +37,42 @@ export const goalSaved = (goalId: string, txs: Transaction[]) =>
 const activeCats = (s: Snapshot, type?: Category['type']) =>
   s.categories.filter((c) => !c.archived && (!type || c.type === type))
 
+// ───────────────────────── Bills that change & late fees ─────────────────────────
+
+/** Late fees / penalties are saved as their own expense with this note, in the bill's category. */
+export const LATE_FEE = 'Late fee'
+export const isLateFee = (t: Transaction) => t.kind === 'expense' && t.note === LATE_FEE
+
+export interface BillEstimate {
+  /** What to expect this month */
+  amount: number
+  /** true when it's based on what was actually paid (not just the typed budget) */
+  learned: boolean
+  /** true when past amounts differ month to month (electricity, water…) */
+  varies: boolean
+  /** lowest–highest actually paid in the months used */
+  low: number
+  high: number
+}
+
+/**
+ * Expected amount for a fixed bill: the average actually paid over the last 3 months
+ * (late fees excluded). Falls back to the bill's usual amount when there's no history yet.
+ */
+export function billEstimate(c: Category, s: Snapshot, month: Date): BillEstimate {
+  const start = ymd(addMonths(monthStart(month), -3))
+  const end = ymd(monthStart(month))
+  const perMonth = new Map<string, number>()
+  for (const t of s.transactions) {
+    if (t.kind !== 'expense' || t.category_id !== c.id || isLateFee(t) || t.date < start || t.date >= end) continue
+    perMonth.set(t.date.slice(0, 7), (perMonth.get(t.date.slice(0, 7)) ?? 0) + Number(t.amount))
+  }
+  const vals = [...perMonth.values()]
+  if (!vals.length) return { amount: c.monthly_budget, learned: false, varies: false, low: c.monthly_budget, high: c.monthly_budget }
+  const low = Math.min(...vals), high = Math.max(...vals)
+  return { amount: Math.round(sum(vals) / vals.length), learned: true, varies: high - low >= 1, low, high }
+}
+
 // ───────────────────────── Month summary (what happened) ─────────────────────────
 
 export interface MonthSummary {
@@ -51,6 +87,9 @@ export interface MonthSummary {
   byMember: { member: Member | null; amount: number }[]
   unpaidBills: Category[]
   unpaidTotal: number
+  /** expected amount per fixed bill this month */
+  estimates: Map<string, BillEstimate>
+  lateFees: number
   status: Status
   /** spent + unpaid bills, as share of income */
   ratio: number
@@ -78,10 +117,12 @@ export function monthSummary(s: Snapshot, month: Date): MonthSummary {
 
   const monthKey = ymd(monthStart(month))
   const paid = new Set(s.billPayments.filter((b) => b.month === monthKey).map((b) => b.category_id))
+  const estimates = new Map(activeCats(s, 'fixed').map((c) => [c.id, billEstimate(c, s, month)]))
   const unpaidBills = activeCats(s, 'fixed')
-    .filter((c) => !paid.has(c.id) && c.monthly_budget > 0)
+    .filter((c) => !paid.has(c.id) && (estimates.get(c.id)?.amount ?? 0) > 0)
     .sort((a, b) => (a.due_day ?? 99) - (b.due_day ?? 99))
-  const unpaidTotal = sum(unpaidBills.map((c) => c.monthly_budget))
+  const unpaidTotal = sum(unpaidBills.map((c) => estimates.get(c.id)!.amount))
+  const lateFees = sum(expenses.filter(isLateFee).map((t) => t.amount))
 
   const committed = spent + unpaidTotal
   return {
@@ -98,6 +139,8 @@ export function monthSummary(s: Snapshot, month: Date): MonthSummary {
       .sort((a, b) => b.amount - a.amount),
     unpaidBills,
     unpaidTotal,
+    estimates,
+    lateFees,
     status: statusFor(committed, income),
     ratio: income > 0 ? committed / income : committed > 0 ? Infinity : 0,
   }
@@ -198,7 +241,7 @@ function planGoal(goal: Goal, s: Snapshot, today: Date, available: number,
 
 export function buildPlan(s: Snapshot, today = new Date()): Plan {
   const income = plannedMonthlyIncome(s.incomes)
-  const fixed = sum(activeCats(s, 'fixed').map((c) => c.monthly_budget))
+  const fixed = sum(activeCats(s, 'fixed').map((c) => billEstimate(c, s, today).amount))
   const emergencyBudget = sum(activeCats(s, 'emergency').map((c) => c.monthly_budget))
   const otherByCategory = averageOther(s, today)
   const otherSpend = sum(otherByCategory.map((o) => o.amount))

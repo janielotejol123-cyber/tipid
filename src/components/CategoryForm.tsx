@@ -48,7 +48,8 @@ export default function CategoryForm({ open, onClose, category, type }: {
         </div>
         <div><label className="label">Name</label><input className="field" value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div><label className="label">{type === 'fixed' ? 'Usual amount per month' : 'Monthly budget'}</label>
-          <MoneyInput value={budget} onChange={setBudget} /></div>
+          <MoneyInput value={budget} onChange={setBudget} />
+          {type === 'fixed' && <p className="text-xs text-muted mt-1.5">If it changes every month (electricity, water), enter a typical amount. Tipid learns the real average from what you pay.</p>}</div>
         {type === 'fixed' && (
           <div><label className="label">Due day of the month</label>
             <input className="field" type="number" inputMode="numeric" min={1} max={31} value={due}

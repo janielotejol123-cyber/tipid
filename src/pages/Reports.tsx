@@ -72,6 +72,11 @@ export default function Reports() {
             <Kpi k="Saved" v={peso(Math.round(m.saved))} sub={`${rate}% of income`} subTone={rate >= 20 ? 'text-lime' : 'text-warn'} />
             <Kpi k={isCurrent ? 'Left after bills' : 'Left over'} v={peso(Math.round(net - (isCurrent ? m.unpaidTotal : 0)))} tone={net - (isCurrent ? m.unpaidTotal : 0) < 0 ? 'text-danger' : ''} />
           </div>
+          {m.lateFees > 0 && (
+            <p className="mt-5 rounded-2xl bg-danger/10 text-danger text-sm px-4 py-3 flex items-center gap-2">
+              <Glyph name="stop" size={18} />{peso(m.lateFees)} went to late fees and penalties this month. Paying bills on time saves this.
+            </p>
+          )}
         </section>
 
         <section className="card">

@@ -152,7 +152,7 @@ export default function Onboarding() {
     },
     {
       title: 'Your fixed bills',
-      sub: 'The ones you pay every month. Estimates are fine.',
+      sub: 'The ones you pay every month. For bills that change (electricity, water), a typical month is fine — Tipid learns the real amount as you pay.',
       ok: true,
       body: <LineEditor lines={bills} setLines={setBills} withDue total={fixed} />,
     },
