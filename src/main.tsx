@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { initInstall } from './lib/install'
+
+initInstall()
 
 // Disable pinch-zoom on phones. iOS Safari ignores user-scalable=no, so block its gesture events too.
 const stop = (e: Event) => e.preventDefault()

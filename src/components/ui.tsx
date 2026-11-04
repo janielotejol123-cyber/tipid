@@ -66,7 +66,8 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="w-full md:max-w-md bg-surface rounded-t-3xl md:rounded-3xl p-5 pb-8 max-h-[90vh] overflow-y-auto pb-safe"
+      <div className="w-full md:max-w-md bg-surface rounded-t-3xl md:rounded-3xl p-5 max-h-[90vh] overflow-y-auto"
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
         onClick={(e) => e.stopPropagation()}>
         <div className="md:hidden mx-auto mb-4 h-1 w-10 rounded-full bg-line" />
         <h2 className="text-lg font-bold mb-4">{title}</h2>

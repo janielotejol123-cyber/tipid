@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import CategoryForm from '../components/CategoryForm'
+import { InstallRow } from '../components/InstallApp'
 import MoneyInput, { n } from '../components/MoneyInput'
 import { IconChevron, IconLogout, IconPlus } from '../components/icons'
 import { ErrorText, PageHeader, Sheet } from '../components/ui'
@@ -84,6 +85,8 @@ export default function Settings() {
 
       {section('other', 'Everyday spending budgets', 'Tipid compares your actual spending against these, and uses them for goal suggestions until you have 1 month of history.')}
       {section('emergency', 'Emergency categories', 'For unplanned costs. Pay from your emergency fund when possible.')}
+
+      <section className="mb-6"><p className="section-title mb-2">App</p><InstallRow /></section>
 
       <button onClick={() => supabase.auth.signOut()} className="btn-ghost w-full md:hidden"><IconLogout size={18} />Sign out</button>
 

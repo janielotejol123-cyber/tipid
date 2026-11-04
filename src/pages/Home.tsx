@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import TxDetail from '../components/TxDetail'
 import TxRow from '../components/TxRow'
+import { InstallBanner } from '../components/InstallApp'
 import { IconChart, IconChevron, IconPiggy, IconReceipt, IconSettings } from '../components/icons'
 import { Avatar, Empty, Logo, Progress, StatusPill } from '../components/ui'
 import { safeToSpend } from '../lib/budget'
@@ -61,6 +62,8 @@ export default function Home() {
               <Stat k="Saved" v={peso(Math.round(m.saved))} tone="text-lime" />
             </div>
           </section>
+
+          <InstallBanner />
 
           {/* Quick actions (GoTyme-style round buttons) */}
           <section className="grid grid-cols-4 gap-2">
