@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CHANGELOG } from '../lib/changelog'
 import { APP_COMMIT, APP_VERSION, buildLabel, fetchDeployed, hardUpdate, useNewVersion, versionLabel } from '../lib/version'
 import Glyph from './Glyph'
+import { displayInfo } from '../lib/viewport'
 import { Sheet } from './ui'
 
 /** Floating notice when a newer version has been deployed */
@@ -75,6 +76,7 @@ function WhatsNew({ onClose }: { onClose: () => void }) {
         ))}
       </ol>
       <p className="text-xs text-muted mt-6">{buildLabel}</p>
+      <p className="text-[11px] text-muted/60 mt-1">{displayInfo()}</p>
     </Sheet>
   )
 }

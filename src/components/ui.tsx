@@ -66,7 +66,7 @@ export function Empty({ icon, title, children }: { icon: string; title: string; 
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-x-0 top-0 z-50 flex items-end md:items-center justify-center bg-black/60" style={{ height: 'var(--app-h, 100dvh)' }} onClick={onClose}>
       <div className="w-full md:max-w-md bg-surface rounded-t-3xl md:rounded-3xl p-5 max-h-[90vh] overflow-y-auto"
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
         onClick={(e) => e.stopPropagation()}>

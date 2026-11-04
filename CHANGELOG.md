@@ -7,6 +7,10 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.4.2 — 2026-11-04 · iPhone bottom menu
+- iOS home-screen apps report a layout height short by the status bar; the mobile shell and bottom sheets now use the measured screen height (`--app-h`, `src/lib/viewport.ts`)
+- Display diagnostics line under Settings → About → What's new
+
 ## 1.4.1 — 2026-11-04 · Updates & iPhone fix
 - Settings → About → "Check for updates" (clears offline cache and reloads the newest version)
 - "New version available → Reload" now also clears the offline cache
