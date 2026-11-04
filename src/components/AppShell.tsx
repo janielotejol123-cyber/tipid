@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useData } from '../lib/household'
 import { supabase } from '../lib/supabase'
-import { IconChart, IconHome, IconLogout, IconPlus, IconReceipt, IconSettings, IconTarget, IconUsers } from './icons'
+import { IconChart, IconHome, IconLogout, IconPlus, IconReceipt, IconSettings, IconSliders, IconTarget, IconUsers } from './icons'
 import { Logo } from './ui'
 import { versionLabel } from '../lib/version'
 
@@ -15,7 +15,8 @@ const tabs: NavItem[] = [
 ]
 const desktopExtra: NavItem[] = [
   { to: '/bills', label: 'Bills', icon: IconReceipt },
-  { to: '/settings', label: 'Budget settings', icon: IconSettings },
+  { to: '/budget', label: 'Budget setup', icon: IconSliders },
+  { to: '/settings', label: 'Settings', icon: IconSettings },
 ]
 
 export default function AppShell() {

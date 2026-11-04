@@ -7,6 +7,13 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.7.0 — 2026-11-05 · Password tools and a clearer Settings
+- Show/hide eye on password fields (`src/components/PasswordField.tsx`); Edge's built-in reveal button hidden so there is only one
+- Change password: checks the current password, sets the new one (8 characters minimum), then signs out other devices with `signOut({ scope: 'others' })` (`src/components/ChangePassword.tsx`)
+- Forgot password: reset link from the login screen, same reply whether or not the email has an account, expired-link message, new-password screen after the link (`src/pages/ResetPassword.tsx`, `recovering` in `src/lib/auth.tsx`)
+- Money settings moved to Budget setup at `/budget` (`src/pages/Budget.tsx`); Settings at `/settings` now holds account, install, about and sign out
+- Note: reset emails depend on the Supabase email sender and its Redirect URLs including the live address
+
 ## 1.6.0 — 2026-11-04 · Weekly, monthly and yearly reports
 - Reports: Weekly (Monday to Sunday), Monthly and Yearly tabs that stay near the same date when switching (`src/components/ReportViews.tsx`)
 - Yearly: totals from actual records only, month by month chart, income by source, spending by category (`yearSummary` in `src/lib/budget.ts`)

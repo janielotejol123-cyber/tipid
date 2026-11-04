@@ -277,7 +277,7 @@ function QuickCreate({ what, householdId, memberId, onClose, onCreated }: {
           </>
         )}
         {what === 'income' && <p className="text-xs text-muted">Saved as income that varies (business, projects). Tipid learns its usual amount from what you record.</p>}
-        {what === 'category' && <p className="text-xs text-muted">You can set a monthly budget for it later in Budget settings.</p>}
+        {what === 'category' && <p className="text-xs text-muted">You can set a monthly budget for it later in Budget setup.</p>}
         <ErrorText>{error}</ErrorText>
         <button className="btn-primary w-full" disabled={!name.trim() || busy} onClick={save}>{busy ? 'Adding…' : 'Add and use'}</button>
       </div>

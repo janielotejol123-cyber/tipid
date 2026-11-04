@@ -63,3 +63,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 @utility section-title { @apply text-sm font-semibold text-muted uppercase tracking-wider; }
 
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Edge adds its own password eye; ours is on the login form */
+input::-ms-reveal { display: none; }

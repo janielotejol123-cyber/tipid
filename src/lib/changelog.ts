@@ -1,6 +1,15 @@
 /** Newest first. Keep in sync with CHANGELOG.md and the "version" in package.json. */
 export const CHANGELOG: { version: string; date: string; title: string; items: string[] }[] = [
   {
+    version: '1.7.0', date: '2026-11-05', title: 'Password tools and a clearer Settings',
+    items: [
+      'Tap the eye on the login screen to show or hide your password.',
+      'Change your password in Settings. This signs you out on your other devices.',
+      'Forgot password? Ask for a reset link from the login screen.',
+      'Settings is now split in two: Budget setup for income, bills and budgets, and Settings for your account and the app.',
+    ],
+  },
+  {
     version: '1.6.0', date: '2026-11-04', title: 'Weekly, monthly and yearly reports',
     items: [
       'Reports now has Weekly, Monthly and Yearly tabs.',
