@@ -18,7 +18,8 @@ export default function TxDetail({ tx, onClose }: { tx: Transaction | null; onCl
   const goal = data.goals.find((g) => g.id === tx.goal_id)
   const who = data.members.find((m) => m.id === tx.member_id)
   const mine = tx.created_by === session?.user.id
-  const kindLabel = { expense: 'Expense', income: 'Extra income', saving: 'Savings' }[tx.kind]
+  const isTransfer = tx.kind === 'transfer' || !!tx.transferred
+  const kindLabel = isTransfer ? 'Transfer to family' : { expense: 'Expense', income: 'Extra income', saving: 'Savings', transfer: '' }[tx.kind]
 
   async function remove() {
     if (!confirm('Delete this transaction?')) return
@@ -33,7 +34,7 @@ export default function TxDetail({ tx, onClose }: { tx: Transaction | null; onCl
 
   return (
     <Sheet open onClose={onClose} title={kindLabel}>
-      <div className="text-4xl font-extrabold mb-5">{tx.kind === 'expense' ? '−' : '+'} {peso(tx.amount)}</div>
+      <div className="text-4xl font-extrabold mb-5">{tx.kind === 'transfer' ? '' : tx.kind === 'expense' ? '− ' : '+ '}{peso(tx.amount)}</div>
       <dl className="space-y-3 text-sm mb-6">
         {cat && <Row k="Category" v={<span className="inline-flex items-center gap-1.5"><Glyph name={cat.icon} size={16} />{cat.name}</span>} />}
         {goal && <Row k="Goal" v={<span className="inline-flex items-center gap-1.5"><Glyph name={goal.emoji} size={16} fallback="target" />{goal.name}</span>} />}

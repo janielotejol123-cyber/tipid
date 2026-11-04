@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useData } from '../lib/household'
 import { supabase } from '../lib/supabase'
-import type { Category, CategoryType } from '../lib/types'
+import type { Category, CategoryType, Scope } from '../lib/types'
 import Glyph, { CATEGORY_ICONS, glyphKey } from './Glyph'
 import MoneyInput, { n } from './MoneyInput'
 import { ErrorText, Sheet } from './ui'
@@ -16,12 +16,13 @@ export default function CategoryForm({ open, onClose, category, type }: {
   const [icon, setIcon] = useState(category ? glyphKey(category.icon) : type === 'fixed' ? 'home' : type === 'emergency' ? 'medical' : 'wallet')
   const [budget, setBudget] = useState<number | ''>(category?.monthly_budget ?? '')
   const [due, setDue] = useState<number | ''>(category?.due_day ?? '')
+  const [scope, setScope] = useState<Scope>(category?.scope ?? 'family')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   async function save() {
     setBusy(true); setError('')
-    const row = { name: name.trim(), icon, monthly_budget: n(budget), due_day: type === 'fixed' ? due || null : null }
+    const row = { name: name.trim(), icon, monthly_budget: n(budget), due_day: type === 'fixed' ? due || null : null, scope }
     const { error } = category
       ? await supabase.from('categories').update(row).eq('id', category.id)
       : await supabase.from('categories').insert({ ...row, type, household_id: data.household.id })
@@ -55,6 +56,12 @@ export default function CategoryForm({ open, onClose, category, type }: {
             <input className="field" type="number" inputMode="numeric" min={1} max={31} value={due}
               onChange={(e) => setDue(e.target.value === '' ? '' : Math.min(31, Math.max(1, Number(e.target.value))))} /></div>
         )}
+        <div><label className="label">Whose money is this?</label>
+          <div className="flex gap-2">
+            {(['family', 'business'] as const).map((s) => (
+              <button key={s} className={`chip flex-1 justify-center capitalize ${scope === s ? 'chip-on' : ''}`} onClick={() => setScope(s)}>{s}</button>
+            ))}
+          </div></div>
         <ErrorText>{error}</ErrorText>
         <div className="flex gap-3 pt-2">
           {category && <button className="btn-ghost !text-danger" onClick={archive}>Remove</button>}

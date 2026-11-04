@@ -6,7 +6,7 @@ import { IconBack, IconChevron } from './icons'
 import { Empty } from './ui'
 import { yearSummary } from '../lib/budget'
 import type { Snapshot } from '../lib/budget'
-import { HISTORY_MONTHS, useData } from '../lib/household'
+import { HISTORY_MONTHS } from '../lib/household'
 import { addDays, peso, shortDate, weekStart, ymd } from '../lib/money'
 import type { Transaction } from '../lib/types'
 
@@ -55,11 +55,12 @@ export function IncomeBySource({ rows, data, onOpen, fixedIncome = 0 }: { rows: 
     name: data.members.find((x) => x.id === id)?.name ?? 'Not assigned',
     amount: incomeTxs.filter((t) => t.member_id === id).reduce((a, t) => a + t.amount, 0),
   })).sort((a, b) => b.amount - a.amount)
-  const groups = [...new Set(incomeTxs.map((t) => t.income_id ?? 'other'))].map((key) => {
-    const list = incomeTxs.filter((t) => (t.income_id ?? 'other') === key)
+  const groupKey = (t: Transaction) => t.income_id ?? (t.transferred ? 'transfer' : 'other')
+  const groups = [...new Set(incomeTxs.map(groupKey))].map((key) => {
+    const list = incomeTxs.filter((t) => groupKey(t) === key)
     return {
       key, list,
-      name: data.incomes.find((i) => i.id === key)?.source ?? 'Bonus / other',
+      name: key === 'transfer' ? 'From the business' : data.incomes.find((i) => i.id === key)?.source ?? 'Bonus / other',
       amount: list.reduce((a, t) => a + t.amount, 0),
     }
   }).sort((a, b) => b.amount - a.amount)
@@ -152,8 +153,7 @@ function Totals({ income, spent, saved }: { income: number; spent: number; saved
   )
 }
 
-export function WeekReport({ anchor, onAnchor, onOpen }: { anchor: Date; onAnchor: (d: Date) => void; onOpen: Open }) {
-  const { data } = useData()
+export function WeekReport({ data, anchor, onAnchor, onOpen }: { data: Snapshot; anchor: Date; onAnchor: (d: Date) => void; onOpen: Open }) {
   const start = weekStart(anchor)
   const end = addDays(start, 6)
   const from = ymd(start)
@@ -181,8 +181,7 @@ export function WeekReport({ anchor, onAnchor, onOpen }: { anchor: Date; onAncho
   )
 }
 
-export function YearReport({ anchor, onAnchor, onOpen }: { anchor: Date; onAnchor: (d: Date) => void; onOpen: Open }) {
-  const { data } = useData()
+export function YearReport({ data, anchor, onAnchor, onOpen }: { data: Snapshot; anchor: Date; onAnchor: (d: Date) => void; onOpen: Open }) {
   const year = anchor.getFullYear()
   const thisYear = new Date().getFullYear()
   const y = useMemo(() => yearSummary(data, year), [data, year])

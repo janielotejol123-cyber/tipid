@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import Glyph from '../components/Glyph'
 import { IconBackspace, IconClose, IconPlus } from '../components/icons'
 import { ErrorText, Sheet } from '../components/ui'
+import { hasBusiness } from '../lib/budget'
 import { useData } from '../lib/household'
 import { peso, ymd } from '../lib/money'
 import { supabase } from '../lib/supabase'
@@ -19,6 +20,9 @@ export default function Add() {
   const nav = useNavigate()
   const [params] = useSearchParams()
   const { data, me, canManage, reload } = useData()
+  // Transfers only make sense once something is labelled Business, so other families never see the extra tab
+  const split = hasBusiness(data)
+  const kinds = split ? [...KINDS, { id: 'transfer' as const, label: 'Transfer' }] : KINDS
   const [creating, setCreating] = useState<'category' | 'income' | 'person' | null>(null)
 
   const [kind, setKind] = useState<TxKind>((params.get('kind') as TxKind) || 'expense')
@@ -77,22 +81,22 @@ export default function Add() {
 
   return (
     <div className="min-h-full flex flex-col max-w-lg mx-auto p-5 md:py-10">
-      <header className="flex items-center justify-between mb-4">
+      <header className={`flex items-center justify-between mb-4 ${split ? 'flex-wrap gap-y-3' : ''}`}>
         <button onClick={() => (step === 'details' ? setStep('amount') : close())}
           className="size-10 rounded-full bg-surface flex items-center justify-center" aria-label="Close"><IconClose /></button>
-        <div className="flex bg-surface rounded-full p-1">
-          {KINDS.map((k) => (
+        <div className={`bg-surface rounded-full p-1 ${split ? 'order-last w-full grid grid-cols-4' : 'flex'}`}>
+          {kinds.map((k) => (
             <button key={k.id} onClick={() => setKind(k.id)}
               className={`px-3 h-8 rounded-full text-sm font-semibold transition ${kind === k.id ? 'bg-lime text-bg' : 'text-muted'}`}>{k.label}</button>
           ))}
         </div>
-        <div className="size-10" />
+        {!split && <div className="size-10" />}
       </header>
 
       {step === 'amount' ? (
         <>
           <div className="flex-1 flex flex-col items-center justify-center py-8">
-            <p className="text-muted text-sm mb-2">{kind === 'expense' ? 'How much did you spend?' : kind === 'saving' ? 'How much are you saving?' : 'How much did you receive?'}</p>
+            <p className="text-muted text-sm mb-2">{kind === 'expense' ? 'How much did you spend?' : kind === 'saving' ? 'How much are you saving?' : kind === 'transfer' ? 'How much business money went to the family?' : 'How much did you receive?'}</p>
             <div className={`font-extrabold tracking-tight ${raw.length > 7 ? 'text-5xl' : 'text-6xl'} ${raw ? '' : 'text-muted'}`}>
               ₱{raw ? Number(raw.split('.')[0]).toLocaleString('en-PH') + (raw.includes('.') ? '.' + raw.split('.')[1] : '') : '0'}
             </div>
@@ -165,6 +169,7 @@ export default function Add() {
                 </p>
               </div>
             )}
+            {kind === 'transfer' && <p className="text-sm text-muted">This moves money from Business to Family. It is not new income or spending, so your All totals stay the same.</p>}
             {(data.members.length > 1 || canManage) && (
               <div>
                 <p className="label">{kind === 'expense' ? 'Who spent it?' : 'Who?'}</p>

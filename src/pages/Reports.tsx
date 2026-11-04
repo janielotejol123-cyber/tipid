@@ -6,7 +6,8 @@ import TxRow from '../components/TxRow'
 import Glyph from '../components/Glyph'
 import { IconChevron } from '../components/icons'
 import { Empty, PageHeader, Progress, StatusPill } from '../components/ui'
-import { monthSummary, statusFor } from '../lib/budget'
+import { hasBusiness, monthSummary, scopedSnapshot, statusFor } from '../lib/budget'
+import type { ReportView, Snapshot } from '../lib/budget'
 import { useData } from '../lib/household'
 import { addMonths, monthName, monthStart, peso, sameMonth, ymd } from '../lib/money'
 import type { Transaction } from '../lib/types'
@@ -16,12 +17,22 @@ const TYPE_LABEL = { fixed: 'Fixed bills', other: 'Everyday', emergency: 'Emerge
 
 const TABS = [{ id: 'week', label: 'Weekly' }, { id: 'month', label: 'Monthly' }, { id: 'year', label: 'Yearly' }] as const
 type Tab = (typeof TABS)[number]['id']
+const VIEWS: { id: ReportView; label: string }[] = [{ id: 'all', label: 'All' }, { id: 'family', label: 'Family' }, { id: 'business', label: 'Business' }]
+const VIEW_HINT = {
+  family: 'Family money only. Money moved from the business counts as income here.',
+  business: 'Business money only. Money moved to the family counts as money out here.',
+}
 
 export default function Reports() {
   const [tab, setTab] = useState<Tab>('month')
   // One shared date, so switching tabs stays around the period being looked at
   const [anchor, setAnchor] = useState(() => new Date())
   const [open, setOpen] = useState<Transaction | null>(null)
+  const { data } = useData()
+  const [view, setView] = useState<ReportView>('all')
+  const split = hasBusiness(data)
+  const active = split ? view : 'all'
+  const shown = useMemo(() => scopedSnapshot(data, active), [data, active])
 
   return (
     <div>
@@ -32,16 +43,28 @@ export default function Reports() {
             className={`h-10 rounded-full text-sm font-semibold transition ${tab === t.id ? 'bg-lime text-bg' : 'text-muted'}`}>{t.label}</button>
         ))}
       </div>
-      {tab === 'week' && <WeekReport anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
-      {tab === 'month' && <MonthReport month={monthStart(anchor)} onMonth={setAnchor} onOpen={setOpen} />}
-      {tab === 'year' && <YearReport anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
+      {split && (
+        <div className="mb-4">
+          <div role="group" aria-label="Whose money" className="flex gap-2">
+            {VIEWS.map((v) => (
+              <button key={v.id} aria-pressed={active === v.id} onClick={() => setView(v.id)} className={`chip flex-1 justify-center ${active === v.id ? 'chip-on' : ''}`}>{v.label}</button>
+            ))}
+          </div>
+          {active !== 'all' && <p className="text-xs text-muted mt-2">{VIEW_HINT[active]}</p>}
+        </div>
+      )}
+      {tab === 'week' && <WeekReport data={shown} anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
+      {tab === 'month' && <MonthReport data={shown} showGoals={active !== 'business'} month={monthStart(anchor)} onMonth={setAnchor} onOpen={setOpen} />}
+      {tab === 'year' && <YearReport data={shown} anchor={anchor} onAnchor={setAnchor} onOpen={setOpen} />}
       <TxDetail tx={open} onClose={() => setOpen(null)} />
     </div>
   )
 }
 
-function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Date) => void; onOpen: (t: Transaction) => void }) {
-  const { data, plan } = useData()
+function MonthReport({ data, showGoals, month, onMonth, onOpen }: {
+  data: Snapshot; showGoals: boolean; month: Date; onMonth: (d: Date) => void; onOpen: (t: Transaction) => void
+}) {
+  const { plan } = useData()
   const [openCat, setOpenCat] = useState<string | null>(null)
   const isCurrent = ymd(month) === ymd(monthStart(new Date()))
 
@@ -195,7 +218,7 @@ function MonthReport({ month, onMonth, onOpen }: { month: Date; onMonth: (d: Dat
             </ul>
           )}
 
-          {(plan.emergency || plan.goals.length > 0) && (
+          {showGoals && (plan.emergency || plan.goals.length > 0) && (
             <>
               <h2 className="font-bold mt-6 mb-3">Goals</h2>
               <ul className="space-y-3">

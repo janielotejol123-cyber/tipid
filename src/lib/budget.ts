@@ -5,7 +5,7 @@
  * 80–100% = tight, > 100% = short.
  */
 import { addMonths, monthStart, sameMonth, toMonthly, ymd } from './money'
-import type { BillPayment, Category, Goal, Household, Income, Member, Transaction } from './types'
+import type { BillPayment, Category, Goal, Household, Income, Member, Scope, Transaction } from './types'
 
 export interface Snapshot {
   household: Household
@@ -18,6 +18,55 @@ export interface Snapshot {
 }
 
 export type Status = 'ok' | 'tight' | 'short'
+
+// ───────────────────────── Family / Business views ─────────────────────────
+
+export type ReportView = 'all' | Scope
+
+export const hasBusiness = (s: Snapshot) =>
+  s.incomes.some((i) => i.scope === 'business') || s.categories.some((c) => c.scope === 'business')
+
+/** Only exists inside the Business view, so transfers get their own line there. Archived keeps it out of bills and budgets. */
+const TRANSFER_CATEGORY: Omit<Category, 'household_id'> = {
+  id: 'transfer-to-family', name: 'Transfer to family', type: 'other', monthly_budget: 0,
+  due_day: null, icon: 'family', archived: true, scope: 'business',
+}
+
+/**
+ * The snapshot one report view works from, so all the month and year math stays the same.
+ * All: transfers count as nothing, because the money stayed in the household.
+ * Family: a transfer is money in. Business: a transfer is money out.
+ * That keeps Family left over + Business left over = All left over.
+ * Savings go to family goals, so they stay on the Family side.
+ */
+export function scopedSnapshot(s: Snapshot, view: ReportView): Snapshot {
+  if (view === 'all') return s
+  const inView = (x: { scope?: Scope }) => (x.scope ?? 'family') === view
+  const incomes = s.incomes.filter(inView)
+  const categories = s.categories.filter(inView)
+  const incomeIds = new Set(incomes.map((i) => i.id))
+  const categoryIds = new Set(categories.map((c) => c.id))
+  const transactions = s.transactions.flatMap((t): Transaction[] => {
+    if (t.kind === 'transfer') {
+      return [view === 'family'
+        ? { ...t, kind: 'income', transferred: true }
+        : { ...t, kind: 'expense', category_id: TRANSFER_CATEGORY.id, transferred: true }]
+    }
+    if (t.kind === 'income') {
+      const own = t.income_id && s.incomes.some((i) => i.id === t.income_id) ? incomeIds.has(t.income_id) : view === 'family'
+      return own ? [t] : []
+    }
+    if (t.kind === 'expense') {
+      const own = t.category_id && s.categories.some((c) => c.id === t.category_id) ? categoryIds.has(t.category_id) : view === 'family'
+      return own ? [t] : []
+    }
+    return view === 'family' ? [t] : []
+  })
+  return {
+    ...s, incomes, transactions,
+    categories: view === 'business' ? [...categories, { ...TRANSFER_CATEGORY, household_id: s.household.id }] : categories,
+  }
+}
 
 export const OK_RATIO = 0.8
 export const statusFor = (spending: number, income: number): Status => {

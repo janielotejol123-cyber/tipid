@@ -3,7 +3,10 @@ export type PaySchedule = 'monthly' | 'semi_monthly' | 'weekly'
 export type IncomeFrequency = PaySchedule | 'variable'
 export type Role = 'owner' | 'adult' | 'teen' | 'child'
 export type CategoryType = 'fixed' | 'emergency' | 'other'
-export type TxKind = 'expense' | 'income' | 'saving'
+/** 'transfer' = business money moved to the family */
+export type TxKind = 'expense' | 'income' | 'saving' | 'transfer'
+/** Which side of the money an income source or category belongs to. Missing means 'family'. */
+export type Scope = 'family' | 'business'
 
 export interface Household {
   id: string
@@ -30,6 +33,7 @@ export interface Income {
   source: string
   amount: number
   frequency: IncomeFrequency
+  scope?: Scope
 }
 
 export interface Category {
@@ -41,6 +45,7 @@ export interface Category {
   due_day: number | null
   icon: string
   archived: boolean
+  scope?: Scope
 }
 
 export interface Goal {
@@ -69,6 +74,8 @@ export interface Transaction {
   note: string | null
   created_by: string | null
   created_at: string
+  /** set only in scoped reports, on a transfer shown as money in or out */
+  transferred?: boolean
 }
 
 export interface BillPayment {

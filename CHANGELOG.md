@@ -7,6 +7,13 @@ Tipid uses [semantic versioning](https://semver.org): **MAJOR.MINOR.PATCH**
 
 Release: update `src/lib/changelog.ts` + this file, then `npm version minor` (or `patch`) and push with tags.
 
+## 1.8.0 — 2026-11-05 · Family and Business money
+- Migration `20261105000000_family_business_split.sql`: `scope` on incomes and categories, `transfer` transaction kind. Must be applied before this version deploys.
+- `scopedSnapshot` in `src/lib/budget.ts`: Reports work from a filtered snapshot, so month and year math is unchanged. Family + Business left over always equals All.
+- Transfers count as nothing in All, income in Family, money out in Business
+- Family / Business choice in the income and category forms; switch in Reports and Transfer tab in Add appear only once something is labelled Business
+- Home and Goals still use all money combined
+
 ## 1.7.1 — 2026-11-05 · Phone layout fix
 - Home and Goals: `grid-cols-1` on the mobile grid. Without it the implicit column grew to fit long `truncate` text, so the page scrolled sideways.
 - Reports: monthly verdict is `text-sm text-muted`, so the amounts lead. "Where the money went" wraps on very narrow phones.

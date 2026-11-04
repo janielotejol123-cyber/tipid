@@ -9,7 +9,7 @@ import { useData } from '../lib/household'
 import { incomeEstimate } from '../lib/budget'
 import { payLabel, peso, toMonthly } from '../lib/money'
 import { supabase } from '../lib/supabase'
-import type { Category, CategoryType, Income, IncomeFrequency, PaySchedule } from '../lib/types'
+import type { Category, CategoryType, Income, IncomeFrequency, PaySchedule, Scope } from '../lib/types'
 
 export default function Budget() {
   const { data, plan, canManage, reload } = useData()
@@ -34,7 +34,7 @@ export default function Budget() {
         <div className="card !p-2">
           {cats.map((c) => (
             <button key={c.id} disabled={!canManage} onClick={() => setCat({ c, type })} className="w-full flex items-center gap-3 p-3 text-left">
-              <Glyph name={c.icon} className="text-lime" /><span className="flex-1 font-medium">{c.name}</span>
+              <Glyph name={c.icon} className="text-lime" /><span className="flex-1 font-medium">{c.name}{c.scope === 'business' && <BusinessTag />}</span>
               <span className="font-semibold">{c.monthly_budget ? peso(c.monthly_budget) : <span className="text-muted">—</span>}</span>
             </button>
           ))}
@@ -71,6 +71,7 @@ export default function Budget() {
                 <span className="flex-1 min-w-0">
                   <span className="block font-medium truncate">{i.source} · {data.members.find((m) => m.id === i.member_id)?.name ?? '—'}</span>
                   <span className="block text-xs text-muted">
+                    {i.scope === 'business' && <><b className="text-lime font-semibold">Business</b> · </>}
                     {varies
                       ? est!.learned ? `Varies · last 3 months ${peso(est!.low)}–${peso(est!.high)}` : 'Varies · estimate until you record income'
                       : `${peso(i.amount)} · ${payLabel[i.frequency as PaySchedule]}`}
@@ -98,6 +99,10 @@ export default function Budget() {
   )
 }
 
+function BusinessTag() {
+  return <span className="ml-2 text-xs font-semibold text-lime">Business</span>
+}
+
 function IncomeForm({ income, onClose }: { income: Income | null; onClose: () => void }) {
   const { data, me, reload } = useData()
   const [source, setSource] = useState(income?.source ?? 'Salary')
@@ -106,10 +111,11 @@ function IncomeForm({ income, onClose }: { income: Income | null; onClose: () =>
   const [freq, setFreq] = useState<IncomeFrequency>(income?.frequency ?? data.household.pay_schedule)
   const varies = freq === 'variable'
   const [lastFixed, setLastFixed] = useState<PaySchedule>(income && income.frequency !== 'variable' ? income.frequency : data.household.pay_schedule)
+  const [scope, setScope] = useState<Scope>(income?.scope ?? 'family')
   const [error, setError] = useState('')
 
   async function save() {
-    const row = { source: source.trim() || 'Salary', member_id: memberId, amount: n(amount), frequency: freq }
+    const row = { source: source.trim() || 'Salary', member_id: memberId, amount: n(amount), frequency: freq, scope }
     const { error } = income
       ? await supabase.from('incomes').update(row).eq('id', income.id)
       : await supabase.from('incomes').insert({ ...row, household_id: data.household.id })
@@ -154,6 +160,12 @@ function IncomeForm({ income, onClose }: { income: Income | null; onClose: () =>
             {n(amount) > 0 && <p className="text-sm text-muted">= {peso(Math.round(toMonthly(n(amount), freq)))} per month</p>}
           </>
         )}
+        <div><label className="label">Whose money is this?</label>
+          <div className="flex gap-2">
+            {(['family', 'business'] as const).map((s) => (
+              <button key={s} className={`chip flex-1 justify-center capitalize ${scope === s ? 'chip-on' : ''}`} onClick={() => setScope(s)}>{s}</button>
+            ))}
+          </div></div>
         <ErrorText>{error}</ErrorText>
         <div className="flex gap-3">
           {income && <button className="btn-ghost !text-danger" onClick={remove}>Remove</button>}
