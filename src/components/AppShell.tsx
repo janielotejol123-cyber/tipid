@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { useEffect, useRef } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useData } from '../lib/household'
 import { supabase } from '../lib/supabase'
 import { IconChart, IconHome, IconLogout, IconPlus, IconReceipt, IconSettings, IconTarget, IconUsers } from './icons'
@@ -19,9 +20,13 @@ const desktopExtra: NavItem[] = [
 export default function AppShell() {
   const nav = useNavigate()
   const { data } = useData()
+  const { pathname } = useLocation()
+  const scroller = useRef<HTMLElement>(null)
+  // Content scrolls inside <main> on mobile, so reset it when switching tabs
+  useEffect(() => { scroller.current?.scrollTo(0, 0); window.scrollTo(0, 0) }, [pathname])
 
   return (
-    <div className="min-h-full md:flex">
+    <div className="h-full flex flex-col md:h-auto md:min-h-full md:flex-row">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-r border-line p-5 sticky top-0 h-screen">
         <Logo className="px-3 mb-1" />
@@ -40,14 +45,14 @@ export default function AppShell() {
         </button>
       </aside>
 
-      <main className="flex-1 min-w-0">
-        <div className="mx-auto max-w-5xl px-4 md:px-8 pt-5 md:pt-8 pb-28 md:pb-10">
+      <main ref={scroller} className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain md:overflow-visible">
+        <div className="mx-auto max-w-5xl px-4 md:px-8 pt-5 md:pt-8 pb-10">
           <Outlet />
         </div>
       </main>
 
       {/* Mobile bottom tab bar with center + button */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-bg/95 backdrop-blur border-t border-line pb-safe">
+      <nav className="md:hidden shrink-0 relative z-40 bg-bg border-t border-line pb-safe">
         <div className="grid grid-cols-5 items-end h-16 px-2">
           {tabs.slice(0, 2).map((t) => <Tab key={t.to} {...t} />)}
           <div className="flex justify-center">
