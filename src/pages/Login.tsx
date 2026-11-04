@@ -18,7 +18,7 @@ export default function Login() {
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: location.href } })
     setBusy(false)
-    if (error) return setError(error.message)
+    if (error) return setError(friendly(error.message))
     if (mode === 'up' && !data.session) setNotice('Check your email to confirm your account, then sign in.')
   }
 
@@ -57,4 +57,15 @@ export default function Login() {
       </div>
     </div>
   )
+}
+
+/** Turn Supabase auth errors into plain-English messages */
+function friendly(msg: string) {
+  const m = msg.toLowerCase()
+  if (m.includes('rate limit') || m.includes('too many'))
+    return 'Too many sign-up emails were sent in the last hour. Please wait a bit and try again — or sign in if you already confirmed your email.'
+  if (m.includes('already registered')) return 'This email already has an account. Sign in instead.'
+  if (m.includes('email not confirmed')) return 'Please confirm your email first — check your inbox (and spam) for the link from Tipid.'
+  if (m.includes('invalid login')) return 'Wrong email or password.'
+  return msg
 }
